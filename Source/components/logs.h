@@ -1,0 +1,1 @@
+void audioLog(const char* fmt,...);
