@@ -64,9 +64,11 @@ int max(std::vector<float> table, int size)
 void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 {	
 	//int size = allSpectroSamples.size();
+	lock.enter();
 	int localShiftNumber = shiftNumber;
+	lock.exit();
 	//shiftNumber = 0;
-	g.setColour(Colours::gold);
+	//g.setColour(Colours::gold);
 	image.moveImageSection(0,0,localShiftNumber,0,2048-localShiftNumber,1024);
 	//image.clear(Rectangle<int>(localShiftNumber,1024),Colours::gold);
 	/*for(int y=0;y<1024;y++)
@@ -110,7 +112,9 @@ void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 		image.setPixelAt(2045-i,1003,Colours::white);
 		
 	}
+	lock.enter();
 	shiftNumber = shiftNumber - localShiftNumber;
+	lock.exit();
 	g.drawImage(image,0,0,getWidth(),getHeight(),2048-getWidth(),1024-getHeight(),getWidth(),getHeight());
 }
 
@@ -186,9 +190,9 @@ void LiveAudioSpectrogramDisplayComp::audioDeviceIOCallback (const float** input
 			tmp.resize(1024,0.0f);
 			for(int i=0;i<1024;i++)
 				tmp[i]=spectroSamples[i];
-			shiftNumber++;
 			//for(int i=0;i<1024;++i)
 			allSpectroSamples.push_back(tmp);
+			shiftNumber++;
 			lock.exit();
 			// compute spectrogram
 			//spectroSamples = std::vector<float>();
