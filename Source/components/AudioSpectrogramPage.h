@@ -44,6 +44,7 @@ private:
 	FileOutputStream* fileOutput;
 	int shiftNumber;
 	int begin, end;
+	CriticalSection lock;
 
     LiveAudioSpectrogramDisplayComp (const LiveAudioSpectrogramDisplayComp&);
     LiveAudioSpectrogramDisplayComp& operator= (const LiveAudioSpectrogramDisplayComp&);

@@ -82,6 +82,7 @@ void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 		step=4;*/
 	for (int i=0; i<localShiftNumber;i++)
 	{
+		lock.enter();
 		int size = allSpectroSamples.size();
 /*		String line;
 		// write spectrogram to output file
@@ -97,7 +98,7 @@ void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 			return;
 		for (int j=0;j<1024;j++)
 			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+(float)allSpectroSamples[size-(shiftNumber-i)][j]/100,1,1,1));
-		
+		lock.exit();
 		/*for(int y=0;y<1024;y++)
 		{
 			image.setPixelAt(2047-i,y,Colour::fromHSV(0.66+(float)paintSamples[2048-shiftNumber+i][y]/100,1,1,1));
@@ -179,6 +180,7 @@ void LiveAudioSpectrogramDisplayComp::audioDeviceIOCallback (const float** input
 				*/
 			//int size = allSpectroSamples.size();
 			//allSpectroSamples.resize(size+1024);
+			lock.enter();
 			std::vector<float> tmp;
 			tmp.clear();
 			tmp.resize(1024,0.0f);
@@ -186,7 +188,8 @@ void LiveAudioSpectrogramDisplayComp::audioDeviceIOCallback (const float** input
 				tmp[i]=spectroSamples[i];
 			shiftNumber++;
 			//for(int i=0;i<1024;++i)
-				allSpectroSamples.push_back(tmp);
+			allSpectroSamples.push_back(tmp);
+			lock.exit();
 			// compute spectrogram
 			//spectroSamples = std::vector<float>();
 			//spectroSamples.reserve(1024);
