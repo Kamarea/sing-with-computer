@@ -30,17 +30,19 @@ LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp(std::string fol
 LiveAudioSpectrogramDisplayComp::~LiveAudioSpectrogramDisplayComp()
 {
 	String line;
+
 	for (int i=0;i<allSpectroSamples.size();i++)
 	{
-		line = "";
+		/*line = "";
 		// write spectrogram to output file
 		for(int j=0;j<1024;++j)
 		{
 			line+=String(allSpectroSamples[i][j]);
 			line+=',';
 		}
-		line+="\n";
-		fileOutput->write(line.toWideCharPointer(),line.length());
+		line+="\n";*/
+		//fileOutput->write(line.toWideCharPointer(),line.length());
+		fileOutput->write(allSpectroSamples[i].data(),1024);
 	}
 
 	delete fileOutput;

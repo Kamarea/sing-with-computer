@@ -42,7 +42,7 @@ public:
           currentDemoId (0)
     {
         setOpaque (true);
-        invokeDirectly (showAudio, true);
+        //invokeDirectly (showAudio, true);
     }
 
     ~ContentComp()
