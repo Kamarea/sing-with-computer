@@ -3,32 +3,35 @@
 
 AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceManager_)
     : deviceManagerPlayback (deviceManager_),
+	  counter(0),
 	  thread ("reading data from files")
 {
 	std::string folderName = "data";
-	File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
+	File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
 	
 	fileChooser = new FileChooser("Choose file...",directory);
 	if(!fileChooser->browseForDirectory())
 		return;
-	File directoryFile = fileChooser->getResult();
+	directoryFile = fileChooser->getResult();
 	if(!directoryFile.exists())
 		return;
 	wavFile = directoryFile.getChildFile("rawSamples.wav");
 	spectroFile = directoryFile.getChildFile("spectroSamples.smp");
 	
-    deviceManagerPlayback.addAudioCallback (&audioSourcePlayer);
-    audioSourcePlayer.setSource (&transportSource);
-
-    ScopedPointer<FileInputStream> fileIn=new FileInputStream(directoryFile.getChildFile("rawSamples.wav"));
-	WavAudioFormat wavFormat;
-	
+		
+	deviceManagerPlayback.addAudioCallback (&audioSourcePlayer);
+	audioSourcePlayer.setSource (&transportSource);
+	thread.startThread(3);
+    
+	ScopedPointer<FileInputStream> fileIn=new FileInputStream(directoryFile.getChildFile("rawSamples.wav"));
+	AudioFormatManager wavFormat;
+	wavFormat.registerBasicFormats();
 	
     transportSource.stop();
     transportSource.setSource (nullptr);
     currentAudioFileSource = nullptr;
 
-	AudioFormatReader* reader = wavFormat.createReaderFor(fileIn,false);
+	AudioFormatReader* reader = wavFormat.createReaderFor(fileIn);
 	
     if (reader != nullptr)
     {
@@ -39,8 +42,13 @@ AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceMan
                                    32768, // tells it to buffer this many samples ahead
                                    &thread, // this is the background thread to use for reading-ahead
                                    reader->sampleRate);
+		
     }
-	
+	//transportSource.stop();
+	//transportSource.setPosition (0);
+	//transportSource.start();
+
+
 	addAndMakeVisible(pitchDisplay = new PitchDisplay());
 	addAndMakeVisible(spectrogramDisplay = new SpectrogramDisplay());
 
@@ -48,14 +56,12 @@ AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceMan
 	spectrogramDisplay->setBounds (0,getHeight()/2, getWidth(), getHeight());
     startTimer (1000 / 50); // use a timer to keep repainting this component
 	
-            transportSource.setPosition (0);
-            transportSource.start();
 
 }
 
 AudioReaderComponentLive::~AudioReaderComponentLive(void)
 {
-    
+    transportSource.stop();
 	transportSource.setSource (nullptr);
     audioSourcePlayer.setSource (nullptr);
 
@@ -89,9 +95,47 @@ void AudioReaderComponentLive::resized()
 void AudioReaderComponentLive::timerCallback()
 {
     repaint();
+	/*if (counter==-5)
+	{
+
+		ScopedPointer<FileInputStream> fileIn=new FileInputStream(directoryFile.getChildFile("rawSamples.wav"));
+	WavAudioFormat wavFormat;
+	
+	
+    transportSource.stop();
+    transportSource.setSource (nullptr);
+    currentAudioFileSource = nullptr;
+
+	AudioFormatReader* reader = wavFormat.createReaderFor(fileIn,false);
+	
+    if (reader != nullptr)
+    {
+        currentAudioFileSource = new AudioFormatReaderSource (reader, true);
+
+        // ..and plug it into our transport source
+        transportSource.setSource (currentAudioFileSource,
+                                   32768, // tells it to buffer this many samples ahead
+                                   &thread, // this is the background thread to use for reading-ahead
+                                   reader->sampleRate);
+		
+    }
+	
+	}
+	if(counter == -10)
+	{
+		transportSource.setPosition (0);
+		transportSource.start();
+	}
+		*/
+	if (counter == 10)
+	{
+		transportSource.setPosition (0);
+		transportSource.start();
+	}
+	counter++;
 }
 
-void AudioReaderComponentLive::audioDeviceAboutToStart (AudioIODevice*)
+/*void AudioReaderComponentLive::audioDeviceAboutToStart (AudioIODevice*)
 {
     zeromem (samples, sizeof (samples));
 }
@@ -106,7 +150,7 @@ void AudioReaderComponentLive::audioDeviceIOCallback (const float** inputChannel
 {
 
 }
-
+*/
 SpectrogramDisplay::SpectrogramDisplay(void)
 {
 

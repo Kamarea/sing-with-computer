@@ -22,7 +22,7 @@ public:
 };
 
 class AudioReaderComponentLive : public Component, 
-                             public AudioIODeviceCallback,
+//                             public AudioIODeviceCallback,
                              public Timer
 {
 public:
@@ -34,10 +34,10 @@ public:
 	
     void timerCallback();
 
-    void audioDeviceAboutToStart (AudioIODevice* device);
-    void audioDeviceStopped();
-    void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                float** outputChannelData, int numOutputChannels, int numSamples);
+//    void audioDeviceAboutToStart (AudioIODevice* device);
+//    void audioDeviceStopped();
+//    void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
+//                                float** outputChannelData, int numOutputChannels, int numSamples);
 	
 
 private:
@@ -46,14 +46,14 @@ private:
 	File wavFile;
 	File spectroFile;
 	File pitchFile;
-
+	File directoryFile;
 	
     TimeSliceThread thread;
 	AudioSourcePlayer audioSourcePlayer;
     AudioTransportSource transportSource;
     ScopedPointer<AudioFormatReaderSource> currentAudioFileSource;
 
-	
+	int counter;
 	SpectrogramDisplay* spectrogramDisplay;
 	PitchDisplay* pitchDisplay;
 	void loadFiles();
