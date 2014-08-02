@@ -24,12 +24,14 @@ AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceMan
 	thread.startThread(3);
     
 	ScopedPointer<FileInputStream> fileIn=new FileInputStream(directoryFile.getChildFile("rawSamples.wav"));
+	if(fileIn==nullptr)
+		return;
 	AudioFormatManager wavFormat;
 	wavFormat.registerBasicFormats();
 	
     transportSource.stop();
-    transportSource.setSource (nullptr);
-    currentAudioFileSource = nullptr;
+    //transportSource.setSource (nullptr);
+    //currentAudioFileSource = nullptr;
 
 	AudioFormatReader* reader = wavFormat.createReaderFor(fileIn);
 	

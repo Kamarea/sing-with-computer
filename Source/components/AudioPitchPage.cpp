@@ -9,7 +9,7 @@ static Array<float> getPitches(LiveAudioPitchDisplayComp* loader)
 }
 */
 //[MiscUserDefs] You can add your own user definitions and misc code here...
-LiveAudioPitchDisplayComp::LiveAudioPitchDisplayComp(std::string folderName)
+LiveAudioPitchDisplayComp::LiveAudioPitchDisplayComp()
 {
     nextSample = subSample = 0;
     accumulator = 0;
@@ -392,11 +392,11 @@ float LiveAudioPitchDisplayComp::min(float table[]){
 	return min;
 }
 
-AudioPitchPage::AudioPitchPage (AudioDeviceManager& deviceManager_, std::string folderName)
+AudioPitchPage::AudioPitchPage (AudioDeviceManager& deviceManager_)
     : deviceManager (deviceManager_),
       liveAudioPDisplayComp (0)
 {
-    addAndMakeVisible (liveAudioPDisplayComp = LiveAudioPitchDisplayComp::getInstance(folderName));
+    addAndMakeVisible (liveAudioPDisplayComp = LiveAudioPitchDisplayComp::getInstance());
 
     //[UserPreSize]
     //[/UserPreSize]

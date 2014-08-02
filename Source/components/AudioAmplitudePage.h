@@ -43,12 +43,11 @@ private:
 };
 
 
-class AudioAmplitudePage  : public Component, 
-							public Timer
+class AudioAmplitudePage  : public Component
 {
 public:
     //==============================================================================
-    AudioAmplitudePage (AudioDeviceManager& deviceManager_, File folderName);
+    AudioAmplitudePage (AudioDeviceManager& deviceManager_);
     ~AudioAmplitudePage();
 
     //==============================================================================
@@ -57,8 +56,8 @@ public:
 
     void paint (Graphics& g);
     void resized();
-	void timerCallback();
-
+	void playClicked(File folderName);
+	void stopClicked();
 
     //==============================================================================
     juce_UseDebuggingNewOperator

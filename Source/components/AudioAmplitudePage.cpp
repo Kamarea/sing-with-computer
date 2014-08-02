@@ -239,68 +239,26 @@ void LiveAudioAmplitudeDisplayComp::audioDeviceIOCallback (const float** inputCh
 
 
 
-AudioAmplitudePage::AudioAmplitudePage (AudioDeviceManager& deviceManager_, File folderName)
+AudioAmplitudePage::AudioAmplitudePage (AudioDeviceManager& deviceManager_)
     : deviceManager (deviceManager_),
       liveAudioAmplitudeDisplayComp (0)
 {
 	addAndMakeVisible (liveAudioAmplitudeDisplayComp = LiveAudioAmplitudeDisplayComp::getInstance());
 
-    //addAndMakeVisible (explanationLabel = new Label (String::empty,
-    //                                                 L"This page demonstrates how to record a wave file from the live audio input..\n\nPressing record will start recording a file in your \"Documents\" folder."));
-    //addAndMakeVisible (explanationLabel = new Label (String::empty,
-     //                                                L""));
-    //explanationLabel->setFont (Font (15.0000f, Font::plain));
-    //explanationLabel->setJustificationType (Justification::topLeft);
-    //explanationLabel->setEditable (false, false, false);
-    //explanationLabel->setColour (TextEditor::textColourId, Colours::black);
-    //explanationLabel->setColour (TextEditor::backgroundColourId, Colour (0x0));
-
-    //addAndMakeVisible (recordButton = new TextButton (String::empty));
-    //recordButton->setButtonText (L"Record");
-    //recordButton->addListener (this);
-    //recordButton->setColour (TextButton::buttonColourId, Colour (0xffff5c5c));
-    //recordButton->setColour (TextButton::textColourOnId, Colours::black);
-	//[UserPreSize]
-    //[/UserPreSize]
-
-    //setSize (600, 500);
-
-
+    
     //[Constructor] You can add your own custom stuff here..
-    //recorder = new AudioRecorder();
-    //deviceManager.addAudioCallback (recorder);
     deviceManager.addAudioCallback (liveAudioAmplitudeDisplayComp);
 
-	//std::string fileName = "rawSamples.wav";
-	//File file (File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getParentDirectory().getChildFile(folderName.c_str()).getNonexistentChildFile ("rawSamples", ".wav"));
-		//getChildFile(fileName.c_str());
-	//File file = File(File::getSpecialLocation (File::userDocumentsDirectory)
-    //                   .getNonexistentChildFile ("rawSamples", ".wav"));
-	file = folderName.getNonexistentChildFile("rawSamples", ".wav");
-	
-    recorder = new AudioRecorder();
-    deviceManager.addAudioCallback (recorder);
-	startTimer(200);
     //[/Constructor]
 }
 
 AudioAmplitudePage::~AudioAmplitudePage()
 {
-	
-    recorder->stop();
-	Time::waitForMillisecondCounter(500);
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //deviceManager.removeAudioCallback (recorder);
-    deviceManager.removeAudioCallback (recorder);
+	stopClicked();
     deviceManager.removeAudioCallback (liveAudioAmplitudeDisplayComp);
-	recorder = 0;
-    ////recorder = 0;
     //[/Destructor_pre]
 
     deleteAndZero (liveAudioAmplitudeDisplayComp);
-    //deleteAndZero (explanationLabel);
-    //deleteAndZero (recordButton);
-
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
@@ -321,14 +279,23 @@ void AudioAmplitudePage::paint (Graphics& g)
 void AudioAmplitudePage::resized()
 {
     liveAudioAmplitudeDisplayComp->setBounds (5, 5, getWidth() - 10, getHeight()-10);
-    //explanationLabel->setBounds (160, 150, getWidth() - 169, 216);
-    //recordButton->setBounds (8, 88, 136, 40);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
 
-void AudioAmplitudePage::timerCallback()
-{	
+void AudioAmplitudePage::playClicked(File folderName)
+{
+	file = folderName.getNonexistentChildFile("rawSamples", ".wav");
+	
+    recorder = new AudioRecorder();
+    deviceManager.addAudioCallback (recorder);
 	recorder->startRecording (file);
-	stopTimer();
+}
+
+void AudioAmplitudePage::stopClicked()
+{
+    recorder->stop();
+	//Time::waitForMillisecondCounter(500);
+    deviceManager.removeAudioCallback (recorder);
+	recorder = 0;
 }

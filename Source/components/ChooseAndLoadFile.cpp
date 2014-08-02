@@ -34,7 +34,7 @@ ChooseAndLoadFile::ChooseAndLoadFile ()
 
     //[UserPreSize]
     //[/UserPreSize]
-
+	setComponentID("chooseAndLoadFileID");
     setSize (1, 1);
     setOpaque (true);
 	

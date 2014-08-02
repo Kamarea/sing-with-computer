@@ -10,11 +10,11 @@ class LiveAudioPitchDisplayComp  : public Component,
 {
 public:
     //==============================================================================
-	static LiveAudioPitchDisplayComp* getInstance(std::string folderName)
+	static LiveAudioPitchDisplayComp* getInstance()
 	{
 		if (instance == NULL)
 		{
-			instance = new LiveAudioPitchDisplayComp(folderName);
+			instance = new LiveAudioPitchDisplayComp();
 		}
 		return instance;
 	};
@@ -48,7 +48,7 @@ private:
 	float min(float a[]);
 
 	
-    LiveAudioPitchDisplayComp(std::string folderName);
+    LiveAudioPitchDisplayComp();
     LiveAudioPitchDisplayComp (const LiveAudioPitchDisplayComp&);
     LiveAudioPitchDisplayComp& operator= (const LiveAudioPitchDisplayComp&);
 };
@@ -58,7 +58,7 @@ class AudioPitchPage  : public Component
 {
 public:
     //==============================================================================
-    AudioPitchPage (AudioDeviceManager& deviceManager_, std::string folderName);
+    AudioPitchPage (AudioDeviceManager& deviceManager_);
     ~AudioPitchPage();
 
     //==============================================================================

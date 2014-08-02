@@ -25,6 +25,10 @@
 //[Headers]     -- You can add your own extra header files here --
 #include "../component_headers.h";
 //#include "ChooseAndLoadFile.h";
+#include "AudioAmplitudePage.h"
+#include "AudioSpectrogramPage.h"
+#include "AudioPitchPage.h"
+#include "ScoreParts.h"
 
 
 //[/Headers]
@@ -43,7 +47,7 @@ class AudioTabComponent  : public Component
 public:
     //==============================================================================
     AudioTabComponent ();
-//	AudioTabComponent (Array<ScorePart> score);
+	AudioTabComponent (Array<ScorePart> score);
     ~AudioTabComponent();
 
     //==============================================================================
@@ -53,7 +57,12 @@ public:
     void paint (Graphics& g);
     void resized();
 
-
+	AudioSpectrogramPage* m_spectroPage;
+	AudioAmplitudePage* m_ampliPage;
+	AudioPitchPage* m_pitchPage;
+	
+	ImageButton* playButton;
+	ImageButton* stopButton;
 
     //==============================================================================
     juce_UseDebuggingNewOperator
@@ -67,7 +76,6 @@ private:
     TabbedComponent* tabbedComponent;
 	
 	void init(TabbedComponent* tabbedComponent);
-
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)

@@ -8,7 +8,7 @@
 LiveAudioSpectrogramDisplayComp* LiveAudioSpectrogramDisplayComp::instance;
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
-LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp(std::string folderName)
+LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp()
 {
     nextSample = subSample = 0;
     accumulator = 0;
@@ -19,33 +19,13 @@ LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp(std::string fol
 	image = Image(Image::RGB,2048,1024,true);
 	image.clear(Rectangle<int>(2048,1024),Colours::blue);
 	
-	std::string fileName = folderName.append("\\spectroSamples.smp");
-
-	fileOutput = new FileOutputStream(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile(fileName.c_str()));
-
 	allSpectroSamples.clear();
     startTimer (1000 / 5); // use a timer to keep repainting this component
 }
 
 LiveAudioSpectrogramDisplayComp::~LiveAudioSpectrogramDisplayComp()
 {
-	String line;
-
-	for (int i=0;i<allSpectroSamples.size();i++)
-	{
-		/*line = "";
-		// write spectrogram to output file
-		for(int j=0;j<1024;++j)
-		{
-			line+=String(allSpectroSamples[i][j]);
-			line+=',';
-		}
-		line+="\n";*/
-		//fileOutput->write(line.toWideCharPointer(),line.length());
-		fileOutput->write(allSpectroSamples[i].data(),1024);
-	}
-
-	delete fileOutput;
+	stopClicked();
 }
 
 int max(std::vector<float> table, int size)
@@ -109,11 +89,6 @@ void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 		}*/
 	}
 	
-	for(int i=0;i<200;++i)
-	{
-		image.setPixelAt(2045-i,1003,Colours::white);
-		
-	}
 	lock.enter();
 	shiftNumber = shiftNumber - localShiftNumber;
 	lock.exit();
@@ -237,11 +212,11 @@ void LiveAudioSpectrogramDisplayComp::audioDeviceIOCallback (const float** input
 
 
 
-AudioSpectrogramPage::AudioSpectrogramPage (AudioDeviceManager& deviceManager_,std::string folderName)
+AudioSpectrogramPage::AudioSpectrogramPage (AudioDeviceManager& deviceManager_)
     : deviceManager (deviceManager_),
       liveAudioSpectrogramDisplayComp (0)
 {
-	addAndMakeVisible (liveAudioSpectrogramDisplayComp = LiveAudioSpectrogramDisplayComp::getInstance(folderName));
+	addAndMakeVisible (liveAudioSpectrogramDisplayComp = LiveAudioSpectrogramDisplayComp::getInstance());
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -292,3 +267,34 @@ void AudioSpectrogramPage::resized()
     //[/UserResized]
 }
 
+void AudioSpectrogramPage::playClicked(File directory)
+{
+	liveAudioSpectrogramDisplayComp->playClicked(directory);
+}
+void AudioSpectrogramPage::stopClicked()
+{
+	liveAudioSpectrogramDisplayComp->stopClicked();
+}
+
+void LiveAudioSpectrogramDisplayComp::playClicked(File directory)
+{
+	fileOutput = new FileOutputStream(directory.getChildFile("spectroSamples.smp"));
+	lock.enter();
+	begin = allSpectroSamples.size();
+	lock.exit();
+}
+
+void LiveAudioSpectrogramDisplayComp::stopClicked()
+{
+	lock.enter();
+	end = allSpectroSamples.size();
+	lock.exit();
+	String line;
+	// TODO change
+	for (int i=begin;i<end;i++)
+	{
+		fileOutput->write(allSpectroSamples[i].data(),1024);
+	}
+
+	delete fileOutput;
+}

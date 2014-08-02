@@ -17,6 +17,7 @@ Component* createAudio();
 Component* chooseAndLoadFileComponent();
 ChooseAndLoadFile* chooseAndLoadFile();
 Component* createAudioReader();
+Component* createAudio(Array<ScorePart> score);
 
 TextEditor* textField;
 
@@ -42,7 +43,7 @@ public:
           currentDemoId (0)
     {
         setOpaque (true);
-        invokeDirectly (showAudioReader, true);
+        //invokeDirectly (showAudioReader, true);
     }
 
     ~ContentComp()
@@ -172,14 +173,15 @@ public:
         {
 
         case showAudio:
-			//if (currentDemoId == loadFile)
-			//{
-				//Component* currentComp = getChildComponent(0);
-			//	ChooseAndLoadFile* loader = chooseAndLoadFile();
-			//	getScore(loader);
-				//showDemo (createAudio(getScore((ChooseAndLoadFile*)currentComp)));
-			//}
-			//else
+			if (currentDemoId == loadFile)
+			{
+				Component* currentComp = findChildWithID("chooseAndLoadFileID");
+				//Array<ScorePart> score = ((ChooseAndLoadFile*)currentComp)->parts;
+				//Component* temp = createAudio(score);
+				//showDemo (temp);
+				showDemo (createAudio(((ChooseAndLoadFile*)currentComp)->parts));
+			}
+			else
 				showDemo (createAudio());
             currentDemoId = showAudio;
             break;

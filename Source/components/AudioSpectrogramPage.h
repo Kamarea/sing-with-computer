@@ -12,19 +12,21 @@ class LiveAudioSpectrogramDisplayComp  : public Component,
 {
 public:
     //==============================================================================
-	static LiveAudioSpectrogramDisplayComp* getInstance(std::string folderName)
+	static LiveAudioSpectrogramDisplayComp* getInstance()
 	{
 		if (instance == NULL)
 		{
-			instance = new LiveAudioSpectrogramDisplayComp(folderName);
+			instance = new LiveAudioSpectrogramDisplayComp();
 		}
 		return instance;
 	};
-    LiveAudioSpectrogramDisplayComp(std::string folderName);
+    LiveAudioSpectrogramDisplayComp();
     ~LiveAudioSpectrogramDisplayComp();
 
     void paint (Graphics& g);
     void timerCallback();
+	void playClicked(File directory);
+	void stopClicked();
 
     void audioDeviceAboutToStart (AudioIODevice* device);
     void audioDeviceStopped();
@@ -55,7 +57,7 @@ class AudioSpectrogramPage  : public Component
 {
 public:
     //==============================================================================
-    AudioSpectrogramPage (AudioDeviceManager& deviceManager_, std::string folderName);
+    AudioSpectrogramPage (AudioDeviceManager& deviceManager_);
     ~AudioSpectrogramPage();
 
     //==============================================================================
@@ -65,7 +67,8 @@ public:
     void paint (Graphics& g);
     void resized();
 
-
+	void playClicked(File directory);
+	void stopClicked();
 
     //==============================================================================
     juce_UseDebuggingNewOperator
