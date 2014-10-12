@@ -33,6 +33,8 @@ public:
     void resized();
 	
     void timerCallback();
+	void loadClicked();
+	AudioThumbnailCache thumbnailCache;
 
 //    void audioDeviceAboutToStart (AudioIODevice* device);
 //    void audioDeviceStopped();
@@ -69,10 +71,12 @@ public:
 	
 //    void paint (Graphics& g);
     void resized();
+	TextButton* loadButton;
+	AudioReaderComponentLive* audioReader;
 	
 private:
     AudioDeviceManager deviceManager;
-	AudioReaderComponentLive* audioReader;
+	//AudioThumbnail thumbnail;
 };
 
 #endif //_AUDIO_READER_TAB_COMPONENT_H_

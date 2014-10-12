@@ -244,7 +244,7 @@ AudioAmplitudePage::AudioAmplitudePage (AudioDeviceManager& deviceManager_)
       liveAudioAmplitudeDisplayComp (0)
 {
 	addAndMakeVisible (liveAudioAmplitudeDisplayComp = LiveAudioAmplitudeDisplayComp::getInstance());
-
+	isRecording = false;
     
     //[Constructor] You can add your own custom stuff here..
     deviceManager.addAudioCallback (liveAudioAmplitudeDisplayComp);
@@ -254,7 +254,8 @@ AudioAmplitudePage::AudioAmplitudePage (AudioDeviceManager& deviceManager_)
 
 AudioAmplitudePage::~AudioAmplitudePage()
 {
-	stopClicked();
+	if(isRecording)
+		stopClicked();
     deviceManager.removeAudioCallback (liveAudioAmplitudeDisplayComp);
     //[/Destructor_pre]
 
@@ -290,10 +291,12 @@ void AudioAmplitudePage::playClicked(File folderName)
     recorder = new AudioRecorder();
     deviceManager.addAudioCallback (recorder);
 	recorder->startRecording (file);
+	isRecording = true;
 }
 
 void AudioAmplitudePage::stopClicked()
 {
+	isRecording = false;
     recorder->stop();
 	//Time::waitForMillisecondCounter(500);
     deviceManager.removeAudioCallback (recorder);

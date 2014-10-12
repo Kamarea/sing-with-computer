@@ -1,10 +1,29 @@
 #include "AudioReaderComponent.h"
 
+class LoadListener: public Button::Listener 
+{
+public:
+	LoadListener(AudioReaderComponent* component)
+	{
+		m_component = component;
+	};
+	void buttonClicked(Button* button)
+	{		
+		m_component->audioReader->loadClicked();
+		m_component->loadButton->setEnabled(false);
+	};
+	AudioReaderComponent* m_component;
+};
 
 AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceManager_)
     : deviceManagerPlayback (deviceManager_),
 	  counter(0),
+	  thumbnailCache (5),
 	  thread ("reading data from files")
+{
+}
+
+void AudioReaderComponentLive::loadClicked()
 {
 	std::string folderName = "data";
 	File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
@@ -39,11 +58,14 @@ AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceMan
     {
         currentAudioFileSource = new AudioFormatReaderSource (reader, true);
 
+		CriticalSection lock;
+		lock.enter();
         // ..and plug it into our transport source
         transportSource.setSource (currentAudioFileSource,
                                    32768, // tells it to buffer this many samples ahead
                                    &thread, // this is the background thread to use for reading-ahead
                                    reader->sampleRate);
+		lock.exit();
 		
     }
 	//transportSource.stop();
@@ -189,7 +211,12 @@ AudioReaderComponent::AudioReaderComponent(void)
     deviceManager.initialise (2, 2, 0, true, String::empty, 0);
 	
 	addAndMakeVisible(audioReader = new AudioReaderComponentLive(deviceManager));
-	audioReader->setBounds(0,0,getWidth(),getHeight());
+	
+	LoadListener* loadListener = new LoadListener(this);
+	loadButton = new TextButton("load");
+	loadButton->addListener(loadListener);
+    addAndMakeVisible (loadButton);
+
     //deviceManager.addAudioCallback (audioReader);
 }
 
@@ -198,6 +225,7 @@ AudioReaderComponent::~AudioReaderComponent(void)
 {
     //deviceManager.removeAudioCallback (audioReader);
     deleteAndZero (audioReader);
+    deleteAndZero (loadButton);
 }
 /*
 void AudioReaderComponent::paint (Graphics& g)
@@ -214,7 +242,8 @@ void AudioReaderComponent::paint (Graphics& g)
 void AudioReaderComponent::resized()
 {
     //tabbedComponent->setBounds (0,0, getWidth(), getHeight());//getHeight()/2
-	audioReader->setBounds(0,0,getWidth(),getHeight());
+	audioReader->setBounds(0,0,0,0);
+	loadButton->setBounds(10,10,50,50);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }

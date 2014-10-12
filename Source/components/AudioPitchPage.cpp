@@ -1,6 +1,17 @@
 #include "AudioPitchPage.h"
 //#include "logs.h"
 
+#define LOG_10_2 0.30102999566398119521373889472449
+
+const String pitchNames[] = {"1A","1AIS","1B",
+				"C","CIS","D","DIS","E","F","FIS","G","GIS","A","AIS","B",
+				"c","cis","d","dis","e","f","fis","g","gis","a","ais","b",
+				"c1","cis1","d1","dis1","e1","f1","fis1","g1","gis1","a1","ais1","b1",
+				"c2","cis2","d2","dis2","e2","f2","fis2","g2","gis2","a2","ais2","b2",
+				"c3","cis3","d3","dis3","e3","f3","fis3","g3","gis3","a3","ais3","b3"};
+const int pitchCount = 51;
+
+
 LiveAudioPitchDisplayComp* LiveAudioPitchDisplayComp::instance;
 /*	
 static Array<float> getPitches(LiveAudioPitchDisplayComp* loader)
@@ -18,54 +29,28 @@ LiveAudioPitchDisplayComp::LiveAudioPitchDisplayComp()
 	test=0;
 	frequency=-2;
 	pitches=Array<float>();
+	samplesNumber=0;
+	isRecording = false;
 
     startTimer (1000 / 50); // use a timer to keep repainting this component
 }
 
 LiveAudioPitchDisplayComp::~LiveAudioPitchDisplayComp()
 {
+	lock.enter();
+	if(isRecording)
+		stopClicked();
+	lock.exit();
 }
 
 void LiveAudioPitchDisplayComp::paint (Graphics& g)
 {
     g.fillAll (Colours::white);
 
-    g.setColour (Colours::blue);
-	
-	//("frequency=%f\r\n",pitch[2046]);
-	//audioLog("frequency=%f\r\n",pitch[2047]);
-	//audioLog("Samples[0-10]=%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n",samples[0],samples[1],samples[2],
-	//	samples[3],samples[4],samples[5],samples[6],samples[7],samples[8],samples[9],samples[10]);
-	
-
     const float midY = getHeight() * 0.5f;
     int sampleNum = (nextSample + numElementsInArray (samples) - 1);
 	float oneHzSize = (float)getHeight() / 1800.0f;
-
-	const float log_10_2 = 0.30102999566398119521373889472449;
-	for(int i=0;i<2047;++i)
-	{
-		pitchMIDI[i]=pitchMIDI[i+1];
-	}
-
-	// MIDI
-	pitchMIDI[2047]=69+12*(log10(pitch[2047]/440)/log_10_2);
-	pitchMIDI[2047]-=33;
-
-	pitches.add(pitchMIDI[2047]);
-	
-	/*audioLog("log = %f\r\n",pitchMIDI[2046]);
-	audioLog("log = %f\r\n",pitchMIDI[2047]);
-	audioLog("width = %d\r\n",getWidth());
-	audioLog("height = %d\r\n",getHeight());
-	*/
-	String pitchNames[] = {"1A","1AIS","1B",
-				"C","CIS","D","DIS","E","F","FIS","G","GIS","A","AIS","B",
-				"c","cis","d","dis","e","f","fis","g","gis","a","ais","b",
-				"c1","cis1","d1","dis1","e1","f1","fis1","g1","gis1","a1","ais1","b1",
-				"c2","cis2","d2","dis2","e2","f2","fis2","g2","gis2","a2","ais2","b2",
-				"c3","cis3","d3","dis3","e3","f3","fis3","g3","gis3","a3","ais3","b3"};
-	int pitchCount = 51;
+		
 	float semitone = (float)getHeight()/pitchCount;
 
 	// draw background
@@ -87,17 +72,22 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 		g.drawFittedText(pitchNames[pitchCount-(int)i-1],getWidth()-50,(int)((i)*semitone),50,(int)semitone,Justification::right,1);
 	}
 
-	int offset = 2048 - getWidth() + 1;
-	//audioLog("last midi = %d\r\n",pitchMIDI[getWidth()+offset]);
-	//audioLog("init x = %d\r\n",getWidth()+offset);
-
+	// draw pitches
 	g.setColour(Colours::blue);
-    for (int x = 2048 - getWidth() + 20; x < 2048; ++x)
+	
+	lock.enter();
+	// wczytaæ ile jest do narysowania - max getWidth();
+	// dla tylu ile jest do  narysowania narysowaæ
+	int drawNumber = samplesNumber > (getWidth() - 40) ? 
+		(samplesNumber - getWidth() + 40) : samplesNumber;
+    for (int x = 0; x < drawNumber; ++x)
     {
-        int y=(float)getHeight() - pitchMIDI[x] * semitone;
-
-        g.drawVerticalLine (x-2048+getWidth() - 20, y, y+1);
+        int y=(float)getHeight() - 
+			allSamples[allSamples.size() - drawNumber + x] * semitone;
+		// getWidth() - 20 -drawNumber + x
+        g.drawVerticalLine (getWidth() - 20 -drawNumber + x, y, y+1);
     }
+	lock.exit();
 }
 
 void LiveAudioPitchDisplayComp::timerCallback()
@@ -119,8 +109,7 @@ void LiveAudioPitchDisplayComp::audioDeviceIOCallback (const float** inputChanne
                                                        float** outputChannelData, int numOutputChannels, int numSamples)
 {
 	//numSamples=2560 = 512*5
-	// u¿yjemy sobie tablicy 3*1024, bêdziemy liczyæ dla pierwszej 1024, drugiej, 
-	// potem przesuwamy o 2048 i dopisujemy nowe próbki na koniec <- Ÿle!!!
+	// u¿ywamy pierwsze 2048 próbek z ka¿dej paczki
 	// 
     for(int i = 0; i < 2048; i+=1)//++i)
     {
@@ -165,6 +154,20 @@ void LiveAudioPitchDisplayComp::audioDeviceIOCallback (const float** inputChanne
 	pitch[2047]=frequency;
 	if(pitch[2045]>0 & pitch[2047]>0 & pitch[2046]<=0)
 		pitch[2046]=(pitch[2045]+pitch[2047])/2;
+
+	/*for(int i=0;i<2047;++i)
+	{
+		pitchMIDI[i]=pitchMIDI[i+1];
+	}*/
+
+	// MIDI
+	float MIDIpitch=69+12*(log10(pitch[2047]/440)/LOG_10_2);
+	MIDIpitch-=33;
+
+	lock.enter();
+	allSamples.push_back(MIDIpitch);
+	samplesNumber++;
+	lock.exit();
 
     // We need to clear the output buffers, in case they're full of junk..
     for (int i = 0; i < numOutputChannels; ++i)
@@ -443,3 +446,40 @@ void AudioPitchPage::resized()
     //[/UserResized]
 }
 
+void AudioPitchPage::playClicked(File directory)
+{
+	liveAudioPDisplayComp->playClicked(directory);
+}
+
+void AudioPitchPage::stopClicked()
+{
+	liveAudioPDisplayComp->stopClicked();
+}
+
+void LiveAudioPitchDisplayComp::playClicked(File directory)
+{
+	fileOut = new FileOutputStream(directory.getChildFile("pitchSamples.smp"));
+	lock.enter();
+	begin=samplesNumber;
+	isRecording = true;
+	lock.exit();
+}
+
+void LiveAudioPitchDisplayComp::stopClicked()
+{
+	lock.enter();
+	end=samplesNumber;
+	String line;
+	std::vector<float> writeSamples;
+	writeSamples.resize(end-begin);
+	// TODO change
+	for (int i=begin;i<end;i++)
+	{
+		writeSamples[i-begin] = allSamples[i];
+	}
+	isRecording = false;
+	lock.exit();
+	fileOut->write(writeSamples.data(),writeSamples.size());
+
+	delete fileOut;
+}

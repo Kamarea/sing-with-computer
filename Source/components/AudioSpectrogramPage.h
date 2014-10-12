@@ -47,6 +47,7 @@ private:
 	int shiftNumber;
 	int begin, end;
 	CriticalSection lock;
+	bool isRecording;
 
     LiveAudioSpectrogramDisplayComp (const LiveAudioSpectrogramDisplayComp&);
     LiveAudioSpectrogramDisplayComp& operator= (const LiveAudioSpectrogramDisplayComp&);

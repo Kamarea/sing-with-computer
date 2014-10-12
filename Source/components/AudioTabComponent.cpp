@@ -50,6 +50,7 @@ public:
 		
 		m_component->m_ampliPage->playClicked(directory);
 		m_component->m_spectroPage->playClicked(directory);
+		m_component->m_pitchPage->playClicked(directory);
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
 	};
@@ -67,6 +68,7 @@ public:
 	{
 		m_component->m_ampliPage->stopClicked();
 		m_component->m_spectroPage->stopClicked();
+		m_component->m_pitchPage->stopClicked();
 		m_component->stopButton->setEnabled(false);
 		m_component->playButton->setEnabled(true);
 	};
@@ -170,9 +172,13 @@ void AudioTabComponent::paint (Graphics& g)
 
 void AudioTabComponent::resized()
 {
-    tabbedComponent->setBounds (0,getHeight()/2, getWidth(), getHeight()/2);//getHeight()/2
+    /*tabbedComponent->setBounds (0,getHeight()/2, getWidth(), getHeight()/2);//getHeight()/2
     playButton->setBounds(getWidth()-100,getHeight()/2-50,50,50);
 	stopButton->setBounds(getWidth()-50,getHeight()/2-50,50,50);
+	*/
+	tabbedComponent->setBounds (0, 50, getWidth(), getHeight()-50);//getHeight()/2
+    playButton->setBounds(getWidth()-100,0,50,50);
+	stopButton->setBounds(getWidth()-50,0,50,50);
 	//[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }

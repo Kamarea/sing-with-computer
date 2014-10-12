@@ -22,6 +22,8 @@ public:
 
     void paint (Graphics& g);
     void timerCallback();
+	void playClicked(File directory);
+	void stopClicked();
 
     void audioDeviceAboutToStart (AudioIODevice* device);
     void audioDeviceStopped();
@@ -39,6 +41,12 @@ private:
     int nextSample, subSample;
     float accumulator;
 	int test;
+	FileOutputStream* fileOut;
+	std::vector<float> allSamples;
+	CriticalSection lock;
+	int samplesNumber;
+	int begin, end;
+	bool isRecording;
 
 	float computePitch(float *my_samples);
 	float abs(float a);
@@ -68,7 +76,8 @@ public:
     void paint (Graphics& g);
     void resized();
 
-
+	void playClicked(File directory);
+	void stopClicked();
 
     //==============================================================================
     juce_UseDebuggingNewOperator

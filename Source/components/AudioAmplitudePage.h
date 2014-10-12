@@ -74,6 +74,7 @@ private:
     //Label* explanationLabel;
     //TextButton* recordButton;
 	File file;
+	bool isRecording;
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)

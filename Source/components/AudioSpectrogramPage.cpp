@@ -18,14 +18,18 @@ LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp()
 	shiftNumber=0;
 	image = Image(Image::RGB,2048,1024,true);
 	image.clear(Rectangle<int>(2048,1024),Colours::blue);
-	
+	isRecording = false;
+
 	allSpectroSamples.clear();
     startTimer (1000 / 5); // use a timer to keep repainting this component
 }
 
 LiveAudioSpectrogramDisplayComp::~LiveAudioSpectrogramDisplayComp()
 {
-	stopClicked();
+	lock.enter();
+	if(isRecording)
+		stopClicked();
+	lock.exit();
 }
 
 int max(std::vector<float> table, int size)
@@ -281,6 +285,7 @@ void LiveAudioSpectrogramDisplayComp::playClicked(File directory)
 	fileOutput = new FileOutputStream(directory.getChildFile("spectroSamples.smp"));
 	lock.enter();
 	begin = allSpectroSamples.size();
+	isRecording=true;
 	lock.exit();
 }
 
@@ -288,13 +293,13 @@ void LiveAudioSpectrogramDisplayComp::stopClicked()
 {
 	lock.enter();
 	end = allSpectroSamples.size();
-	lock.exit();
 	String line;
 	// TODO change
 	for (int i=begin;i<end;i++)
 	{
-		fileOutput->write(allSpectroSamples[i].data(),1024);
+		fileOutput->write(allSpectroSamples[i].data(),2048);
 	}
-
+	isRecording = false;
+	lock.exit();
 	delete fileOutput;
 }
