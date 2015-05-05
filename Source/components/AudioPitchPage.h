@@ -1,9 +1,15 @@
-#include "../component_headers.h"
+#ifndef AUDIO_PITCH_PAGE_H
+#define AUDIO_PITCH_PAGE_H
+
+
+//#include "../component_headers.h"
+#include "ScoreParts.h"
 
 //==============================================================================
 /* This component scrolls a continuous waveform showing the audio that's currently
    coming into the audio input.
 */
+
 class LiveAudioPitchDisplayComp  : public Component,
                                    public AudioIODeviceCallback,
                                    public Timer
@@ -22,7 +28,7 @@ public:
 
     void paint (Graphics& g);
     void timerCallback();
-	void playClicked(File directory);
+	void playClicked(File directory, int* pitchPosition, Array<Note>* scorePitches);
 	void stopClicked();
 
     void audioDeviceAboutToStart (AudioIODevice* device);
@@ -30,6 +36,8 @@ public:
     void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
                                 float** outputChannelData, int numOutputChannels, int numSamples);
 	Array<float> pitches;
+	int* pitchPosition;
+	Array<Note>* scorePitches;
 
 private:
 	static LiveAudioPitchDisplayComp* instance;
@@ -76,7 +84,7 @@ public:
     void paint (Graphics& g);
     void resized();
 
-	void playClicked(File directory);
+	void playClicked(File directory, int* pitchPosition, Array<Note>* pitches);
 	void stopClicked();
 
     //==============================================================================
@@ -96,3 +104,5 @@ private:
     AudioPitchPage (const AudioPitchPage&);
     const AudioPitchPage& operator= (const AudioPitchPage&);
 };
+
+#endif // AUDIO_PITCH_PAGE_H

@@ -24,6 +24,7 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "ScoreParts.h"
+#include "../component_headers.h"
 //[/Headers]
 
 

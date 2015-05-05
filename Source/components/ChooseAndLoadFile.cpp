@@ -93,6 +93,11 @@ void ChooseAndLoadFile::readScore(int position)
 			relativeCount = relativeCount.substring(0,relativeCount.length());
 		}
 	}
+
+	Note note;
+	note.duration = 0;
+	note.pitch = c;
+	note.octave = mainOctave;
 	
 	fprintf(aaa,"%s\n",relativeCount);
 	ScorePart part;
@@ -104,13 +109,9 @@ void ChooseAndLoadFile::readScore(int position)
 	part.time.base = 0;
 	part.tempo.base=0;
 	part.tempo.value=0;
+	part.notes.add(note);
 	parts.add(part);
 	actualMeasure = 0;
-
-	Note note;
-	note.duration = 0;
-	note.pitch = c;
-	note.octave = mainOctave;
 	
 	int begOfLine = data.indexOf(score+1,"\n");
 	int endOfLine = data.indexOf(begOfLine+1,"\n");

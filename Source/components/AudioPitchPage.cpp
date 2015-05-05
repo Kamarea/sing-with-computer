@@ -80,6 +80,12 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 	// dla tylu ile jest do  narysowania narysowaæ
 	int drawNumber = samplesNumber > (getWidth() - 40) ? 
 		(samplesNumber - getWidth() + 40) : samplesNumber;
+	*pitchPosition = drawNumber > scorePitches->size() ? scorePitches->size() : drawNumber;
+
+	for (int x = 0; x < *pitchPosition; ++x)
+	{
+		//int y=(float)getHeight
+	}
     for (int x = 0; x < drawNumber; ++x)
     {
         int y=(float)getHeight() - 
@@ -446,9 +452,9 @@ void AudioPitchPage::resized()
     //[/UserResized]
 }
 
-void AudioPitchPage::playClicked(File directory)
+void AudioPitchPage::playClicked(File directory, int* pitchPosition, Array<Note>* scorePitches)
 {
-	liveAudioPDisplayComp->playClicked(directory);
+	liveAudioPDisplayComp->playClicked(directory, pitchPosition, scorePitches);
 }
 
 void AudioPitchPage::stopClicked()
@@ -456,8 +462,10 @@ void AudioPitchPage::stopClicked()
 	liveAudioPDisplayComp->stopClicked();
 }
 
-void LiveAudioPitchDisplayComp::playClicked(File directory)
+void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array<Note>* pitches)
 {
+	pitchPosition = position;
+	scorePitches = pitches;
 	fileOut = new FileOutputStream(directory.getChildFile("pitchSamples.smp"));
 	lock.enter();
 	begin=samplesNumber;

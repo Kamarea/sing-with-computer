@@ -39,6 +39,20 @@ enum Pitch {
 	rest
 };
 
+#define	FreqNoPitch 0;
+#define	FreqC 261.63;
+#define	FreqCis 277.18;
+#define	FreqD 293.66;
+#define	FreqDis 311.13;
+#define	FreqE 329.63;
+#define	FreqF 349.23;
+#define	FreqFis 369.99;
+#define	FreqG 392.00;
+#define	FreqGis 415.30;
+#define	FreqA 440.00;
+#define	FreqAis 466.16;
+#define	FreqB 493.88;
+
 enum Form {
 	wrongForm = -1,
 	noForm,
@@ -76,6 +90,8 @@ struct ScorePart {
 		measureNumber = 0;
 	}
 };
+
+float getPitch(Pitch pitch);
 
 class ChooseAndLoadFile;
 //class LiveAudioPitchDisplayComp;

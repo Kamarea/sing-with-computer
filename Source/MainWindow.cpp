@@ -19,7 +19,7 @@ ChooseAndLoadFile* chooseAndLoadFile();
 Component* createAudioReader();
 Component* createAudio(Array<ScorePart> score);
 
-TextEditor* textField;
+/*TextEditor* textField;
 
 
 void audioLog(const char* fmt,...){
@@ -29,7 +29,7 @@ void audioLog(const char* fmt,...){
 	vsprintf(text,fmt,args);
 	textField->insertTextAtCaret(text);
 	va_end(args);
-}
+}*/
 
 //==============================================================================
 class ContentComp  : public Component,
@@ -52,7 +52,7 @@ public:
        // openGLContext.detach();
        //#endif
 
-		deleteAndZero(textField);
+		//deleteAndZero(textField);
     }
 
     void paint (Graphics& g)

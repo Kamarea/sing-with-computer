@@ -50,7 +50,7 @@ public:
 		
 		m_component->m_ampliPage->playClicked(directory);
 		m_component->m_spectroPage->playClicked(directory);
-		m_component->m_pitchPage->playClicked(directory);
+		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitches));
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
 	};
@@ -76,29 +76,67 @@ public:
 };
 
 AudioTabComponent::AudioTabComponent ()
-    : tabbedComponent (0)
+    : tabbedComponent (0),
+	actualPitchPosition (0)
 {
 	//TabbedComponent* comp = &tabbedComp
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
-	init(tabbedComponent);
+	init(tabbedComponent,false);
 	
     //[Constructor] You can add your own custom stuff here..
     //[/Constructor]
 }
 
-AudioTabComponent::AudioTabComponent (Array<ScorePart> score)
-    //: tabbedComponent (0)
+AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
+    : tabbedComponent (0),
+	actualPitchPosition (0)
 {
 	
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
-	init(tabbedComponent);
+	init(tabbedComponent,true);
+	score = scoreParts;
+
+	// zamiana z dziedziny zmian na czas
+	// n / min -> kwantujê do 10/sek -> 600 / min -> 600 / n
+	int actualTempo;
+	int actualTempoBase;
+	Pitch lastPitch = score[0].notes[0].pitch;
+	int lastOctave = score[0].notes[0].octave;
+
+	for (int i=0; i < score.size(); i++)
+	{
+		actualTempo = score[i].tempo.value;
+		actualTempoBase = score[i].tempo.base;
+
+		// dla k = 0; note.value * (600 / n) -> zapisaæ czêstotliwoœæ w tabeli
+		// dlugosc = note.value / tempo.base
+		int length;
+		float freq;
+		for (int k = 0; k < score[i].notes.size(); k++)
+		{
+			length = (600 / actualTempo) * (score[i].notes[k].duration);
+			freq = getPitch(score[i].notes[k].pitch);
+			if (score[i].notes[k].octave > 0)
+				freq *= 2 * score[i].notes[k].octave; 
+			if (score[i].notes[k].octave < 0)
+				freq /= (-1) * 2 * score[i].notes[k].octave;
+			lastPitch = score[i].notes[k].pitch;
+			lastOctave = score[i].notes[k].octave;
+			for (int l = 0; l < length; l++)
+			{
+				scorePitches.add(score[i].notes[k]);
+				scorePitchesFreq.add(freq);
+			}
+		}
+	}
 
     //[Constructor] You can add your own custom stuff here..
     //[/Constructor]
 }
 
-void AudioTabComponent::init(TabbedComponent* tabbedComponent)
+void AudioTabComponent::init(TabbedComponent* tabbedComponent, bool isScore)
 {		
+	hasScore = isScore;
     addAndMakeVisible (tabbedComponent);
     tabbedComponent->setTabBarDepth (30);
 	m_ampliPage =  new AudioAmplitudePage(deviceManager);
@@ -176,7 +214,14 @@ void AudioTabComponent::resized()
     playButton->setBounds(getWidth()-100,getHeight()/2-50,50,50);
 	stopButton->setBounds(getWidth()-50,getHeight()/2-50,50,50);
 	*/
-	tabbedComponent->setBounds (0, 50, getWidth(), getHeight()-50);//getHeight()/2
+	if(hasScore)
+	{
+		tabbedComponent->setBounds (0, getHeight() / 2 + 50, getWidth(), getHeight() / 2 - 50);
+	}
+	else
+	{
+		tabbedComponent->setBounds (0, 50, getWidth(), getHeight() - 50);
+	}
     playButton->setBounds(getWidth()-100,0,50,50);
 	stopButton->setBounds(getWidth()-50,0,50,50);
 	//[UserResized] Add your own custom resize handling here..

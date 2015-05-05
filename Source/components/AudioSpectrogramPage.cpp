@@ -49,48 +49,21 @@ int max(std::vector<float> table, int size)
 
 void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 {	
-	//int size = allSpectroSamples.size();
 	lock.enter();
 	int localShiftNumber = shiftNumber;
 	lock.exit();
-	//shiftNumber = 0;
-	//g.setColour(Colours::gold);
 	image.moveImageSection(0,0,localShiftNumber,0,2048-localShiftNumber,1024);
-	//image.clear(Rectangle<int>(localShiftNumber,1024),Colours::gold);
-	/*for(int y=0;y<1024;y++)
-		{
-			image.setPixelAt(2046,y,Colours::white);
-		}*/
-	/*int step=1;
-	if (localShiftNumber>100)
-		step=2;
-	if(localShiftNumber>200)
-		step=3;
-	if(localShiftNumber>500)
-		step=4;*/
+	
 	for (int i=0; i<localShiftNumber;i++)
 	{
 		lock.enter();
 		int size = allSpectroSamples.size();
-/*		String line;
-		// write spectrogram to output file
-		for(int j=0;j<std::min(1024,(int)(allSpectroSamples.size()));++j)
-		{
-			line+=String(allSpectroSamples[allSpectroSamples.size()-(shiftNumber-i)*1024 +j]);
-			line+=',';
-		}
-		line+="\n";
-		fileOutput->write(line.toWideCharPointer(),line.length());
-*/		
+
 		if(allSpectroSamples[size-shiftNumber+i].size() != 1024)
 			return;
 		for (int j=0;j<1024;j++)
 			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+(float)allSpectroSamples[size-(shiftNumber-i)][j]/100,1,1,1));
 		lock.exit();
-		/*for(int y=0;y<1024;y++)
-		{
-			image.setPixelAt(2047-i,y,Colour::fromHSV(0.66+(float)paintSamples[2048-shiftNumber+i][y]/100,1,1,1));
-		}*/
 	}
 	
 	lock.enter();

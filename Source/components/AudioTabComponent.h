@@ -24,11 +24,10 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../component_headers.h";
-//#include "ChooseAndLoadFile.h";
 #include "AudioAmplitudePage.h"
 #include "AudioSpectrogramPage.h"
 #include "AudioPitchPage.h"
-#include "ScoreParts.h"
+//#include "ScoreParts.h"
 
 
 //[/Headers]
@@ -60,6 +59,10 @@ public:
 	AudioSpectrogramPage* m_spectroPage;
 	AudioAmplitudePage* m_ampliPage;
 	AudioPitchPage* m_pitchPage;
+	Array<ScorePart> score;
+	Array<float> scorePitchesFreq;
+	Array<Note> scorePitches;
+	int actualPitchPosition;
 	
 	ImageButton* playButton;
 	ImageButton* stopButton;
@@ -74,8 +77,9 @@ private:
 
     //==============================================================================
     TabbedComponent* tabbedComponent;
+	bool hasScore;
 	
-	void init(TabbedComponent* tabbedComponent);
+	void init(TabbedComponent* tabbedComponent, bool isScore);
 
     //==============================================================================
     // (prevent copy constructor and operator= being generated..)
