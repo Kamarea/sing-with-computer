@@ -69,6 +69,7 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 	int drawNumber = samplesNumber > (getWidth() - 40) ? 
 		(samplesNumber - getWidth() + 40) : samplesNumber;
 	lock.exit();
+	// draw score pitches
 	if (isRecording)
 	{
 		g.setColour(Colours::green);
@@ -78,8 +79,12 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 
 	        g.drawVerticalLine (getWidth() - 20 - *pitchPosition + x, y, y+1);
 		}
+
+		if ( *pitchPosition >= scorePitches.size() - 1 &&
+			 *pitchPosition <= scorePitches.size() + 1)
+			recordedScoreNumber = samplesNumber - begin;
 	}
-	
+	// draw recorded pitches
 	g.setColour(Colours::blue);
 	lock.enter();
     for (int x = 0; x < drawNumber; ++x)
@@ -477,9 +482,57 @@ void LiveAudioPitchDisplayComp::stopClicked()
 	{
 		writeSamples[i-begin] = allSamples[i];
 	}
+
+	recordedSamples.resize(writeSamples.size());
+	for (int i = 0; i < writeSamples.size(); i++)
+	{
+		recordedSamples[i] = writeSamples [i];
+	}
+
 	isRecording = false;
 	lock.exit();
 	fileOut->write(writeSamples.data(),writeSamples.size());
 
+	calculateDistances();
+
 	delete fileOut;
+}
+
+void LiveAudioPitchDisplayComp::calculateDistances()
+{
+	// wysokoœæ
+	// rytm
+	// dynamika
+	// akcentowanie
+
+	// wysokoœæ:
+	// 1. zwyk³a odleg³oœæ
+	//  - próg b³êdu pomiaru
+	//  - cisza
+	//  - skalowanie
+	//  - synchronizacja
+
+	// synchronizacja recorded i score samples
+	int recordedNumber = recordedScoreNumber;
+	int scoreNumber = scorePitches.size();
+	float synchroStep = (float)(scoreNumber - recordedNumber) / (float)recordedNumber;
+	float synchroCount = 0.0;
+	int counter = 0;
+
+	for (int i = 0; i < recordedNumber; i++)
+	{
+		synchroCount += synchroStep;
+		if (synchroCount > 1)
+		{
+			synchroCount -= 1;
+			counter++;
+			// potrzebne iteratory do .insert
+			//recordedSamples.insert([i + counter]
+		}
+	}
+
+	for (int i = 0; i < recordedSamples.size(); i++)
+	{
+		recordedDistances[i] = abs(0);
+	}
 }

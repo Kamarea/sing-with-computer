@@ -30,6 +30,7 @@ public:
     void timerCallback();
 	void playClicked(File directory, int* pitchPosition, Array<float>* scorePitches);
 	void stopClicked();
+	void calculateDistances();
 
     void audioDeviceAboutToStart (AudioIODevice* device);
     void audioDeviceStopped();
@@ -51,10 +52,13 @@ private:
 	int test;
 	FileOutputStream* fileOut;
 	std::vector<float> allSamples;
+	std::vector<float> recordedSamples;
+	std::vector<float> recordedDistances;
 	CriticalSection lock;
 	int samplesNumber;
 	int begin, end;
 	bool isRecording;
+	int recordedScoreNumber;
 
 	float computePitch(float *my_samples);
 	float abs(float a);
