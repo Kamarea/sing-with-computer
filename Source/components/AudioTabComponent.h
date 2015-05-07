@@ -41,7 +41,7 @@
     audio demo pages..
                                                                     //[/Comments]
 */
-class AudioTabComponent  : public Component
+class AudioTabComponent  : public Component, public Timer
 {
 public:
     //==============================================================================
@@ -55,12 +55,14 @@ public:
 
     void paint (Graphics& g);
     void resized();
+    void timerCallback();
 
 	AudioSpectrogramPage* m_spectroPage;
 	AudioAmplitudePage* m_ampliPage;
 	AudioPitchPage* m_pitchPage;
 	Array<ScorePart> score;
 	Array<float> scorePitchesFreq;
+	Array<float> scorePitchesMIDI;
 	Array<Note> scorePitches;
 	int actualPitchPosition;
 	

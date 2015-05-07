@@ -1,17 +1,6 @@
 #include "AudioPitchPage.h"
 //#include "logs.h"
 
-#define LOG_10_2 0.30102999566398119521373889472449
-
-const String pitchNames[] = {"1A","1AIS","1B",
-				"C","CIS","D","DIS","E","F","FIS","G","GIS","A","AIS","B",
-				"c","cis","d","dis","e","f","fis","g","gis","a","ais","b",
-				"c1","cis1","d1","dis1","e1","f1","fis1","g1","gis1","a1","ais1","b1",
-				"c2","cis2","d2","dis2","e2","f2","fis2","g2","gis2","a2","ais2","b2",
-				"c3","cis3","d3","dis3","e3","f3","fis3","g3","gis3","a3","ais3","b3"};
-const int pitchCount = 51;
-
-
 LiveAudioPitchDisplayComp* LiveAudioPitchDisplayComp::instance;
 /*	
 static Array<float> getPitches(LiveAudioPitchDisplayComp* loader)
@@ -73,19 +62,26 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 	}
 
 	// draw pitches
-	g.setColour(Colours::blue);
 	
 	lock.enter();
 	// wczytaæ ile jest do narysowania - max getWidth();
 	// dla tylu ile jest do  narysowania narysowaæ
 	int drawNumber = samplesNumber > (getWidth() - 40) ? 
 		(samplesNumber - getWidth() + 40) : samplesNumber;
-	*pitchPosition = drawNumber > scorePitches->size() ? scorePitches->size() : drawNumber;
-
-	for (int x = 0; x < *pitchPosition; ++x)
+	lock.exit();
+	if (isRecording)
 	{
-		//int y=(float)getHeight
+		g.setColour(Colours::green);
+		for (int x = 0; x < *pitchPosition; ++x)
+		{
+			int y=getHeight() - (scorePitches[x] - 33) * semitone;
+
+	        g.drawVerticalLine (getWidth() - 20 - *pitchPosition + x, y, y+1);
+		}
 	}
+	
+	g.setColour(Colours::blue);
+	lock.enter();
     for (int x = 0; x < drawNumber; ++x)
     {
         int y=(float)getHeight() - 
@@ -160,11 +156,6 @@ void LiveAudioPitchDisplayComp::audioDeviceIOCallback (const float** inputChanne
 	pitch[2047]=frequency;
 	if(pitch[2045]>0 & pitch[2047]>0 & pitch[2046]<=0)
 		pitch[2046]=(pitch[2045]+pitch[2047])/2;
-
-	/*for(int i=0;i<2047;++i)
-	{
-		pitchMIDI[i]=pitchMIDI[i+1];
-	}*/
 
 	// MIDI
 	float MIDIpitch=69+12*(log10(pitch[2047]/440)/LOG_10_2);
@@ -452,7 +443,7 @@ void AudioPitchPage::resized()
     //[/UserResized]
 }
 
-void AudioPitchPage::playClicked(File directory, int* pitchPosition, Array<Note>* scorePitches)
+void AudioPitchPage::playClicked(File directory, int* pitchPosition, Array<float>* scorePitches)
 {
 	liveAudioPDisplayComp->playClicked(directory, pitchPosition, scorePitches);
 }
@@ -462,10 +453,11 @@ void AudioPitchPage::stopClicked()
 	liveAudioPDisplayComp->stopClicked();
 }
 
-void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array<Note>* pitches)
+void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array<float>* pitches)
 {
 	pitchPosition = position;
-	scorePitches = pitches;
+	*position = 0;
+	scorePitches = *pitches;
 	fileOut = new FileOutputStream(directory.getChildFile("pitchSamples.smp"));
 	lock.enter();
 	begin=samplesNumber;

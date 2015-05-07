@@ -28,7 +28,7 @@ public:
 
     void paint (Graphics& g);
     void timerCallback();
-	void playClicked(File directory, int* pitchPosition, Array<Note>* scorePitches);
+	void playClicked(File directory, int* pitchPosition, Array<float>* scorePitches);
 	void stopClicked();
 
     void audioDeviceAboutToStart (AudioIODevice* device);
@@ -37,7 +37,7 @@ public:
                                 float** outputChannelData, int numOutputChannels, int numSamples);
 	Array<float> pitches;
 	int* pitchPosition;
-	Array<Note>* scorePitches;
+	Array<float> scorePitches;
 
 private:
 	static LiveAudioPitchDisplayComp* instance;
@@ -84,7 +84,7 @@ public:
     void paint (Graphics& g);
     void resized();
 
-	void playClicked(File directory, int* pitchPosition, Array<Note>* pitches);
+	void playClicked(File directory, int* pitchPosition, Array<float>* pitches);
 	void stopClicked();
 
     //==============================================================================

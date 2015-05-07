@@ -50,9 +50,10 @@ public:
 		
 		m_component->m_ampliPage->playClicked(directory);
 		m_component->m_spectroPage->playClicked(directory);
-		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitches));
+		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitchesMIDI));
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
+		m_component->startTimer (120);
 	};
 	AudioTabComponent* m_component;
 };
@@ -71,6 +72,7 @@ public:
 		m_component->m_pitchPage->stopClicked();
 		m_component->stopButton->setEnabled(false);
 		m_component->playButton->setEnabled(true);
+		m_component->actualPitchPosition = 0;
 	};
 	AudioTabComponent* m_component;
 };
@@ -111,10 +113,11 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 		// dla k = 0; note.value * (600 / n) -> zapisaæ czêstotliwoœæ w tabeli
 		// dlugosc = note.value / tempo.base
 		int length;
-		float freq;
-		for (int k = 0; k < score[i].notes.size(); k++)
+		float freq = 0;
+		float pitchMIDI;
+		for (int k = 1; k < score[i].notes.size(); k++)
 		{
-			length = (600 / actualTempo) * (score[i].notes[k].duration);
+			length = (1100 / actualTempo) * (score[i].notes[k].duration);
 			freq = getPitch(score[i].notes[k].pitch);
 			if (score[i].notes[k].octave > 0)
 				freq *= 2 * score[i].notes[k].octave; 
@@ -122,10 +125,12 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 				freq /= (-1) * 2 * score[i].notes[k].octave;
 			lastPitch = score[i].notes[k].pitch;
 			lastOctave = score[i].notes[k].octave;
+			pitchMIDI = std::max<float>(0.0, 69+12*(log10(freq / 440)/LOG_10_2));
 			for (int l = 0; l < length; l++)
 			{
 				scorePitches.add(score[i].notes[k]);
 				scorePitchesFreq.add(freq);
+				scorePitchesMIDI.add(pitchMIDI);
 			}
 		}
 	}
@@ -196,7 +201,11 @@ AudioTabComponent::~AudioTabComponent()
     //[/Destructor]
 }
 
-//==============================================================================
+void AudioTabComponent::timerCallback()
+{
+    actualPitchPosition += 4;
+}
+
 void AudioTabComponent::paint (Graphics& g)
 {
     //[UserPrePaint] Add your own custom painting code here..

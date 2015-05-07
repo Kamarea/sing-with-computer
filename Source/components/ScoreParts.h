@@ -4,6 +4,16 @@
 
 #include "../component_headers.h"
 
+#define LOG_10_2 0.30102999566398119521373889472449
+
+const String pitchNames[] = {"1A","1AIS","1B",
+				"C","CIS","D","DIS","E","F","FIS","G","GIS","A","AIS","B",
+				"c","cis","d","dis","e","f","fis","g","gis","a","ais","b",
+				"c1","cis1","d1","dis1","e1","f1","fis1","g1","gis1","a1","ais1","b1",
+				"c2","cis2","d2","dis2","e2","f2","fis2","g2","gis2","a2","ais2","b2",
+				"c3","cis3","d3","dis3","e3","f3","fis3","g3","gis3","a3","ais3","b3"};
+const int pitchCount = 51;
+
 struct TimeSignature {
 	int count;
 	int base;
