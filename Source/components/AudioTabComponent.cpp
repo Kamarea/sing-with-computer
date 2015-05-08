@@ -96,6 +96,8 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
 	init(tabbedComponent,true);
+	scoreTable = new ScoreTable();
+	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
 	// zamiana z dziedziny zmian na czas
@@ -196,6 +198,7 @@ AudioTabComponent::~AudioTabComponent()
     deleteAndZero (tabbedComponent);
 	deleteAndZero (playButton);
 	deleteAndZero (stopButton);
+	deleteAndZero (scoreTable);
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
@@ -225,7 +228,8 @@ void AudioTabComponent::resized()
 	*/
 	if(hasScore)
 	{
-		tabbedComponent->setBounds (0, getHeight() / 2 + 50, getWidth(), getHeight() / 2 - 50);
+		tabbedComponent->setBounds (0, getHeight() / 2 , getWidth(), getHeight() / 2);
+		scoreTable->setBounds (getWidth() - 200,50,200,getHeight()/ 2 - 20);//getWidth() - 200, 100, 200, getHeight() / 2 - 50);
 	}
 	else
 	{
@@ -237,6 +241,23 @@ void AudioTabComponent::resized()
     //[/UserResized]
 }
 
+ScoreTable::ScoreTable()
+{
+}
+
+ScoreTable::~ScoreTable()
+{
+}
+
+void ScoreTable::paint(Graphics& g)
+{
+	g.fillAll(Colours::grey);
+}
+
+void ScoreTable::resized()
+{
+	
+}
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...

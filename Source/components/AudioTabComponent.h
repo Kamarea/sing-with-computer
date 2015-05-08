@@ -32,7 +32,21 @@
 
 //[/Headers]
 
+class ScoreTable : public Component
+{
+public:
+	ScoreTable();
+	~ScoreTable();
 
+    void paint (Graphics& g);
+    void resized();
+
+	Label pitchDescription;
+	Label pitchValue;
+	Label rythmDescription;
+	Label rythmValue;
+
+};
 
 //==============================================================================
 /**
@@ -68,6 +82,8 @@ public:
 	
 	ImageButton* playButton;
 	ImageButton* stopButton;
+
+	ScoreTable* scoreTable;
 
     //==============================================================================
     juce_UseDebuggingNewOperator

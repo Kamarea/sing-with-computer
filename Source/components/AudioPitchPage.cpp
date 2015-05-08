@@ -545,7 +545,7 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 	int restErrors = 0;
 	float wrongPitches = 0.0;
 	recordedDistances.resize(recordedNumber);
-	for (int i = 0; i < recordedNumber; i++)
+	for (int i = 0; i < std::min<int>(scoreNumber, recordedNumber); i++)
 	{
 		if ((recordedSamples[i] <= 0 && scoreSamples[i] > 0) ||
 			(recordedSamples[i] > 0 && scoreSamples[i] <= 0))
@@ -564,7 +564,8 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 			}
 		}
 	}
-
-	restsPercentage = (float)restErrors / (float)recordedNumber;
-	pitchPercentage = (float)wrongPitches / (float)recordedNumber;
+	float restsWrongPercentage = (float)restErrors / (float)recordedNumber;
+	float pitchWrongPercentage = (float)wrongPitches / (float)recordedNumber;
+	restsPercentage = 100 * (1 - restsWrongPercentage);
+	pitchPercentage = 100 * (1 - pitchWrongPercentage);
 }
