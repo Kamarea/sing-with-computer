@@ -80,8 +80,8 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 	        g.drawVerticalLine (getWidth() - 20 - *pitchPosition + x, y, y+1);
 		}
 
-		if ( *pitchPosition >= scorePitches.size() - 1 &&
-			 *pitchPosition <= scorePitches.size() + 1)
+		if ( *pitchPosition >= scorePitches.size() - 3 &&
+			 *pitchPosition <= scorePitches.size() + 3)
 			recordedScoreNumber = samplesNumber - begin;
 	}
 	// draw recorded pitches
@@ -95,6 +95,9 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
         g.drawVerticalLine (getWidth() - 20 -drawNumber + x, y, y+1);
     }
 	lock.exit();
+
+	g.drawFittedText(String(restsPercentage),getWidth()/2,100,100,100,Justification::left,1);
+	g.drawFittedText(String(pitchPercentage),getWidth()/2,150,100,100,Justification::left,1);
 }
 
 void LiveAudioPitchDisplayComp::timerCallback()
@@ -163,7 +166,7 @@ void LiveAudioPitchDisplayComp::audioDeviceIOCallback (const float** inputChanne
 		pitch[2046]=(pitch[2045]+pitch[2047])/2;
 
 	// MIDI
-	float MIDIpitch=69+12*(log10(pitch[2047]/440)/LOG_10_2);
+	float MIDIpitch=std::max<float>(0.0,69+12*(log10(pitch[2047]/440)/LOG_10_2));
 	MIDIpitch-=33;
 
 	lock.enter();
@@ -468,6 +471,8 @@ void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array
 	begin=samplesNumber;
 	isRecording = true;
 	lock.exit();
+	restsPercentage = 0;
+	pitchPercentage = 0;
 }
 
 void LiveAudioPitchDisplayComp::stopClicked()
@@ -518,21 +523,48 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 	float synchroStep = (float)(scoreNumber - recordedNumber) / (float)recordedNumber;
 	float synchroCount = 0.0;
 	int counter = 0;
+	std::vector<float> scoreSamples;
+	scoreSamples.resize(scorePitches.size());
+	for (int i=0; i < scorePitches.size(); ++i)
+		scoreSamples[i] = scorePitches[i];
 
-	for (int i = 0; i < recordedNumber; i++)
+	for (std::vector<float>::iterator it = recordedSamples.begin(); it != recordedSamples.end(); ++it)
 	{
 		synchroCount += synchroStep;
 		if (synchroCount > 1)
 		{
 			synchroCount -= 1;
 			counter++;
-			// potrzebne iteratory do .insert
-			//recordedSamples.insert([i + counter]
+			float value = *it;
+			it = recordedSamples.insert(it, value);
+			++it;
+		}
+	}
+	recordedNumber += counter;
+
+	int restErrors = 0;
+	float wrongPitches = 0.0;
+	recordedDistances.resize(recordedNumber);
+	for (int i = 0; i < recordedNumber; i++)
+	{
+		if ((recordedSamples[i] <= 0 && scoreSamples[i] > 0) ||
+			(recordedSamples[i] > 0 && scoreSamples[i] <= 0))
+		{
+			restErrors++;
+		}
+		else
+		{
+			recordedDistances[i] = abs(recordedSamples[i] - scoreSamples[i]);
+			if(recordedDistances[i] > 0.25)
+			{
+				if (recordedDistances[i] < 0.75)
+					wrongPitches += 0.5 * recordedDistances[i];
+				else
+					wrongPitches += 1;
+			}
 		}
 	}
 
-	for (int i = 0; i < recordedSamples.size(); i++)
-	{
-		recordedDistances[i] = abs(0);
-	}
+	restsPercentage = (float)restErrors / (float)recordedNumber;
+	pitchPercentage = (float)wrongPitches / (float)recordedNumber;
 }

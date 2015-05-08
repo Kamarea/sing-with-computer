@@ -59,6 +59,9 @@ private:
 	int begin, end;
 	bool isRecording;
 	int recordedScoreNumber;
+	
+	float restsPercentage;
+	float pitchPercentage;
 
 	float computePitch(float *my_samples);
 	float abs(float a);
