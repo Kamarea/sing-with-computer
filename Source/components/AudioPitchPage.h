@@ -5,6 +5,8 @@
 //#include "../component_headers.h"
 #include "ScoreParts.h"
 
+class ScoreTable;
+
 //==============================================================================
 /* This component scrolls a continuous waveform showing the audio that's currently
    coming into the audio input.
@@ -39,6 +41,7 @@ public:
 	Array<float> pitches;
 	int* pitchPosition;
 	Array<float> scorePitches;
+	void setScoreTablePtr(ScoreTable*);
 
 private:
 	static LiveAudioPitchDisplayComp* instance;
@@ -59,6 +62,7 @@ private:
 	int begin, end;
 	bool isRecording;
 	int recordedScoreNumber;
+	ScoreTable* scoreTable;
 	
 	float restsPercentage;
 	float pitchPercentage;
@@ -93,6 +97,8 @@ public:
 
 	void playClicked(File directory, int* pitchPosition, Array<float>* pitches);
 	void stopClicked();
+	
+	void setScoreTablePtr(ScoreTable*);
 
     //==============================================================================
     juce_UseDebuggingNewOperator

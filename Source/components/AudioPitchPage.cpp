@@ -1,4 +1,5 @@
 #include "AudioPitchPage.h"
+#include "AudioTabComponent.h"
 //#include "logs.h"
 
 LiveAudioPitchDisplayComp* LiveAudioPitchDisplayComp::instance;
@@ -461,6 +462,16 @@ void AudioPitchPage::stopClicked()
 	liveAudioPDisplayComp->stopClicked();
 }
 
+void AudioPitchPage::setScoreTablePtr(ScoreTable* table)
+{
+	liveAudioPDisplayComp->setScoreTablePtr(table);
+}
+
+void LiveAudioPitchDisplayComp::setScoreTablePtr(ScoreTable* table)
+{
+	scoreTable = table;
+}
+
 void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array<float>* pitches)
 {
 	pitchPosition = position;
@@ -568,4 +579,8 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 	float pitchWrongPercentage = (float)wrongPitches / (float)recordedNumber;
 	restsPercentage = 100 * (1 - restsWrongPercentage);
 	pitchPercentage = 100 * (1 - pitchWrongPercentage);
+
+	scoreTable->pitchPercentage = pitchPercentage;
+	scoreTable->rythmPercentage = restsPercentage;
+	scoreTable->updateScores();
 }

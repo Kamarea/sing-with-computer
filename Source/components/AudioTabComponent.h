@@ -40,11 +40,16 @@ public:
 
     void paint (Graphics& g);
     void resized();
+	void updateScores();
 
-	Label pitchDescription;
-	Label pitchValue;
-	Label rythmDescription;
-	Label rythmValue;
+	float pitchPercentage;
+	float rythmPercentage;
+
+private:
+	Label* pitchDescription;
+	Label* pitchValue;
+	Label* rythmDescription;
+	Label* rythmValue;
 
 };
 

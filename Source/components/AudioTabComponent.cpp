@@ -100,6 +100,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
+	m_pitchPage->setScoreTablePtr(scoreTable);
 	// zamiana z dziedziny zmian na czas
 	// n / min -> kwantujê do 10/sek -> 600 / min -> 600 / n
 	int actualTempo;
@@ -229,7 +230,7 @@ void AudioTabComponent::resized()
 	if(hasScore)
 	{
 		tabbedComponent->setBounds (0, getHeight() / 2 , getWidth(), getHeight() / 2);
-		scoreTable->setBounds (getWidth() - 200,50,200,getHeight()/ 2 - 20);//getWidth() - 200, 100, 200, getHeight() / 2 - 50);
+		scoreTable->setBounds (getWidth() - 200,50,200,getHeight()/ 2 - 30);//getWidth() - 200, 100, 200, getHeight() / 2 - 50);
 	}
 	else
 	{
@@ -243,20 +244,90 @@ void AudioTabComponent::resized()
 
 ScoreTable::ScoreTable()
 {
+	pitchDescription = new Label(String::empty, L"pitch");
+	rythmDescription = new Label(String::empty, L"rythm");
+	pitchValue = new Label(String::empty, L"0%");
+	rythmValue = new Label(String::empty, L"0%");
+
+	pitchDescription->setFont(Font (14.0000f, Font::plain));
+    pitchDescription->setJustificationType (Justification::bottomLeft);
+    pitchDescription->setEditable (false, false, false);
+    pitchDescription->setColour (TextEditor::textColourId, Colours::black);
+    pitchDescription->setColour (TextEditor::backgroundColourId, Colour (0x0));
+
+	rythmDescription->setFont(Font (14.0000f, Font::plain));
+    rythmDescription->setJustificationType (Justification::bottomLeft);
+    rythmDescription->setEditable (false, false, false);
+    rythmDescription->setColour (TextEditor::textColourId, Colours::black);
+    rythmDescription->setColour (TextEditor::backgroundColourId, Colour (0x0));
+
+	pitchValue->setFont(Font (14.0000f, Font::plain));
+    pitchValue->setJustificationType (Justification::bottomLeft);
+    pitchValue->setEditable (false, false, false);
+    pitchValue->setColour (TextEditor::textColourId, Colours::black);
+    pitchValue->setColour (TextEditor::backgroundColourId, Colour (0x0));
+
+	rythmValue->setFont(Font (14.0000f, Font::plain));
+    rythmValue->setJustificationType (Justification::bottomLeft);
+    rythmValue->setEditable (false, false, false);
+    rythmValue->setColour (TextEditor::textColourId, Colours::black);
+    rythmValue->setColour (TextEditor::backgroundColourId, Colour (0x0));
+
+	addAndMakeVisible(pitchDescription);
+	addAndMakeVisible(pitchValue);
+	addAndMakeVisible(rythmDescription);
+	addAndMakeVisible(rythmValue);
 }
 
 ScoreTable::~ScoreTable()
 {
+	deleteAndZero(pitchDescription);
+	deleteAndZero(rythmDescription);
+	deleteAndZero(pitchValue);
+	deleteAndZero(rythmValue);
 }
 
 void ScoreTable::paint(Graphics& g)
 {
-	g.fillAll(Colours::grey);
+	g.fillAll(Colours::lightgrey);
 }
 
 void ScoreTable::resized()
 {
+	pitchDescription->setBounds(getWidth() / 100,10,100,20);
+	rythmDescription->setBounds(getWidth() / 100,40,100,20);
+
+	pitchValue->setBounds(150,10,50,20);
+	rythmValue->setBounds(150,40,50,20);
+}
+
+void ScoreTable::updateScores()
+{
+	int whole;
+	int rest;
+	String tempString("");
+
+	//pitch
+	whole = (int)pitchPercentage;
+	rest = (int)((pitchPercentage - whole) * 100);
+	tempString += whole;
+	tempString += ",";
+	tempString += rest;
+	tempString += "%";
+	pitchValue->setText(tempString, sendNotification);
+	tempString = "";
 	
+	//rythm
+	whole = (int)rythmPercentage;
+	rest = (int)((rythmPercentage - whole) * 100);
+	tempString += whole;
+	tempString += ",";
+	tempString += rest;
+	tempString += "%";
+	rythmValue->setText(tempString, sendNotification);
+	tempString = "";
+
+	repaint();
 }
 
 
