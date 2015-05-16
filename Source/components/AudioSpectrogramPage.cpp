@@ -5,14 +5,16 @@
 #include "logs.h"
 //#include <fftw3.h>
 
-LiveAudioSpectrogramDisplayComp* LiveAudioSpectrogramDisplayComp::instance;
+AudioSpectrogramPage* AudioSpectrogramPage::instance;
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
-LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp()
+AudioSpectrogramPage::AudioSpectrogramPage()
 {
-    nextSample = subSample = 0;
-    accumulator = 0;
+    //nextSample = subSample = 0;
+    //accumulator = 0;
     //zeromem (samples, sizeof (samples));
+	numberOfSamplesRead = 0;
+	numberOfSamplesRecalculated = 512;
     setOpaque (true);
 	counter=0;
 	shiftNumber=0;
@@ -24,7 +26,7 @@ LiveAudioSpectrogramDisplayComp::LiveAudioSpectrogramDisplayComp()
     startTimer (1000 / 5); // use a timer to keep repainting this component
 }
 
-LiveAudioSpectrogramDisplayComp::~LiveAudioSpectrogramDisplayComp()
+AudioSpectrogramPage::~AudioSpectrogramPage()
 {
 	lock.enter();
 	if(isRecording)
@@ -47,7 +49,7 @@ int max(std::vector<float> table, int size)
 	return index;
 }
 
-void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
+void AudioSpectrogramPage::paint (Graphics& g)
 {	
 	lock.enter();
 	int localShiftNumber = shiftNumber;
@@ -72,188 +74,55 @@ void LiveAudioSpectrogramDisplayComp::paint (Graphics& g)
 	g.drawImage(image,0,0,getWidth(),getHeight(),2048-getWidth(),1024-getHeight(),getWidth(),getHeight());
 }
 
-void LiveAudioSpectrogramDisplayComp::timerCallback()
+void AudioSpectrogramPage::timerCallback()
 {
     repaint();
 }
 
-void LiveAudioSpectrogramDisplayComp::audioDeviceAboutToStart (AudioIODevice*)
+void AudioSpectrogramPage::updateSamples(int number, std::vector<float>* samples)
 {
-    zeromem (samples, sizeof (samples));
-}
-
-void LiveAudioSpectrogramDisplayComp::audioDeviceStopped()
-{
-    zeromem (samples, sizeof (samples));
-}
-
-void LiveAudioSpectrogramDisplayComp::audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                                       float** outputChannelData, int numOutputChannels, int numSamples)
-{
-	//static float temp[1024];
-	//static float temp2[1024];
-
-    const int numSubSamples = 1; // how many input samples go onto one pixel.
-    const float boost = 5.0f;     // how much to boost the levels to make it more visible.
-
-	for(int i=0;i<1024;i++)
-		samples[i]=0.0f;
-
-	int offset = 0;
-    for (int i = 0; i < 2560; i+=1)//++i)
-    {
-        for (int chan = 0; chan < numInputChannels; ++chan)
-        {
-            if (inputChannelData[chan] != 0)
-                accumulator += fabsf (inputChannelData[chan][i]);
-        }
-
-        if (i-offset < 1024)
-        {
-            samples[i-offset] = accumulator * boost;
-            accumulator = 0;
-        }
-		if (i-offset == 1024)
-		{	
-			// prepare samples for fft
-			for(int i=0;i<2048;i++) 
-				transformSamples[i]=0.0;
-			for(int i=0;i<1024;i++)
-				transformSamples[2*i]=samples[i];
-
-			fft1024(transformSamples);
-
-			//float tmp[1024];
-			for (int i=0; i<1024; ++i)
-				spectroSamples[i]=transformSamples[2*i]*transformSamples[2*i]+transformSamples[2*i+1]*transformSamples[2*i+1];
-			/*for(int j=0;j<2047;++j)
-			{
-				for(int i=0;i<1024;++i)
-				{
-					paintSamples[j][i]=paintSamples[j+1][i];
-				}
-			}
-			for(int i=0;i<1024;++i)
-				paintSamples[2047][i]=spectroSamples[i
-				*/
-			//int size = allSpectroSamples.size();
-			//allSpectroSamples.resize(size+1024);
-			lock.enter();
-			std::vector<float> tmp;
-			tmp.clear();
-			tmp.resize(1024,0.0f);
-			for(int i=0;i<1024;i++)
-				tmp[i]=spectroSamples[i];
-			//for(int i=0;i<1024;++i)
-			allSpectroSamples.push_back(tmp);
-			shiftNumber++;
-			lock.exit();
-			// compute spectrogram
-			//spectroSamples = std::vector<float>();
-			//spectroSamples.reserve(1024);
-			//for(int i=0;i<1024;i++)
-			//	spectroSamples.push_back(0.0f);//tmp[i]);
-			/*std::vector<float> tmp2;
-			tmp2.resize(1024);
-			for(int i=0;i<1024;i++)
-				tmp2[i]=tmp[i];
-
-			allSpectroSamples.push_back(tmp2);
-			shiftNumber++;
-			*/
-		/*String line;
-		// write spectrogram to output file
-		for(int j=0;j<1024;++j)
+	if(numberOfSamplesRead < number)
+	{
+		for (int i = numberOfSamplesRead; i < number; i++)
 		{
-			line+=String(paintSamples[2048-shiftNumber+i][j]);
-			line+=',';
+			allSamples.push_back((*samples)[i]);
 		}
-		line+="\n";
-		fileOutput->write(line.toWideCharPointer(),line.length());
-		*/
-			//shiftNumber++;
-			// new sample
-			for(int j=0;j<512;++j)
-				samples[j]=samples[j+512];
-			samples[512] = accumulator * boost;
-			offset += 512;
+		numberOfSamplesRead = number;
+
+		float tempSamples[2048];
+		std::vector<float> spectroLine;
+		if (numberOfSamplesRead >= 3 * 512)
+		{
+			while(number - numberOfSamplesRecalculated >= 1024)
+			{
+				for (int i = 0; i < 2048; i++)
+					transformSamples[i] = 0.0;
+				for (int i = 0; i < 1024; i++)
+					transformSamples[2 * i] = allSamples[numberOfSamplesRecalculated - 512 + i];
+				
+				fft1024(transformSamples);
+
+				for (int i = 0; i < 1024; ++i)
+					spectroSamples[i] = transformSamples[2 * i] * transformSamples[2 * i] +
+								transformSamples[2 * i + 1] * transformSamples[2 * i + 1];
+
+				spectroLine.clear();
+				spectroLine.resize(1024,0.0f);
+				for (int i = 0; i < 1024; i++)
+					spectroLine[i] = spectroSamples[i];
+
+				lock.enter();
+				allSpectroSamples.push_back(spectroLine);
+				shiftNumber++;
+				lock.exit();
+				
+				numberOfSamplesRecalculated += 512;
+			}
 		}
-		
-    }
-
-    // We need to clear the output buffers, in case they're full of junk..
-    for (int i = 0; i < numOutputChannels; ++i)
-        if (outputChannelData[i] != 0)
-            zeromem (outputChannelData[i], sizeof (float) * numSamples);
-}
-
-
-
-AudioSpectrogramPage::AudioSpectrogramPage (AudioDeviceManager& deviceManager_)
-    : deviceManager (deviceManager_),
-      liveAudioSpectrogramDisplayComp (0)
-{
-	addAndMakeVisible (liveAudioSpectrogramDisplayComp = LiveAudioSpectrogramDisplayComp::getInstance());
-
-    //[UserPreSize]
-    //[/UserPreSize]
-
-
-    //[Constructor] You can add your own custom stuff here..
-    //recorder = new AudioRecorder();
-    //deviceManager.addAudioCallback (recorder);
-    deviceManager.addAudioCallback (liveAudioSpectrogramDisplayComp);
-    //[/Constructor]
-}
-
-AudioSpectrogramPage::~AudioSpectrogramPage()
-{
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //deviceManager.removeAudioCallback (recorder);
-    deviceManager.removeAudioCallback (liveAudioSpectrogramDisplayComp);
-    ////recorder = 0;
-    //[/Destructor_pre]
-
-    deleteAndZero (liveAudioSpectrogramDisplayComp);
-    //deleteAndZero (explanationLabel);
-    //deleteAndZero (recordButton);
-
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
-}
-
-//==============================================================================
-void AudioSpectrogramPage::paint (Graphics& g)
-{
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    g.fillAll (Colours::lightgrey);
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
-}
-
-void AudioSpectrogramPage::resized()
-{
-    liveAudioSpectrogramDisplayComp->setBounds (5, 5, getWidth() - 10, getHeight()-10);
-    //explanationLabel->setBounds (160, 150, getWidth() - 169, 216);
-    //recordButton->setBounds (8, 88, 136, 40);
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
+	}
 }
 
 void AudioSpectrogramPage::playClicked(File directory)
-{
-	liveAudioSpectrogramDisplayComp->playClicked(directory);
-}
-void AudioSpectrogramPage::stopClicked()
-{
-	liveAudioSpectrogramDisplayComp->stopClicked();
-}
-
-void LiveAudioSpectrogramDisplayComp::playClicked(File directory)
 {
 	fileOutput = new FileOutputStream(directory.getChildFile("spectroSamples.smp"));
 	lock.enter();
@@ -262,7 +131,7 @@ void LiveAudioSpectrogramDisplayComp::playClicked(File directory)
 	lock.exit();
 }
 
-void LiveAudioSpectrogramDisplayComp::stopClicked()
+void AudioSpectrogramPage::stopClicked()
 {
 	lock.enter();
 	end = allSpectroSamples.size();

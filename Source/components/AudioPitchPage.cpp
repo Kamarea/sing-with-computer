@@ -2,7 +2,7 @@
 #include "AudioTabComponent.h"
 //#include "logs.h"
 
-LiveAudioPitchDisplayComp* LiveAudioPitchDisplayComp::instance;
+AudioPitchPage* AudioPitchPage::instance;
 /*	
 static Array<float> getPitches(LiveAudioPitchDisplayComp* loader)
 {
@@ -10,22 +10,23 @@ static Array<float> getPitches(LiveAudioPitchDisplayComp* loader)
 }
 */
 //[MiscUserDefs] You can add your own user definitions and misc code here...
-LiveAudioPitchDisplayComp::LiveAudioPitchDisplayComp()
+AudioPitchPage::AudioPitchPage()
 {
-    nextSample = subSample = 0;
+    //nextSample = subSample = 0;
     accumulator = 0;
-    zeromem (samples, sizeof (samples));
+	numberOfSamplesRead = 0;
+	numberOfSamplesRecalculated = 512;
+    //zeromem (samples, sizeof (samples));
     setOpaque (true);
 	test=0;
 	frequency=-2;
-	pitches=Array<float>();
 	samplesNumber=0;
 	isRecording = false;
 
     startTimer (1000 / 50); // use a timer to keep repainting this component
 }
 
-LiveAudioPitchDisplayComp::~LiveAudioPitchDisplayComp()
+AudioPitchPage::~AudioPitchPage()
 {
 	lock.enter();
 	if(isRecording)
@@ -33,12 +34,12 @@ LiveAudioPitchDisplayComp::~LiveAudioPitchDisplayComp()
 	lock.exit();
 }
 
-void LiveAudioPitchDisplayComp::paint (Graphics& g)
+void AudioPitchPage::paint (Graphics& g)
 {
     g.fillAll (Colours::white);
 
     const float midY = getHeight() * 0.5f;
-    int sampleNum = (nextSample + numElementsInArray (samples) - 1);
+    //int sampleNum = (nextSample + numElementsInArray (samples) - 1);
 	float oneHzSize = (float)getHeight() / 1800.0f;
 		
 	float semitone = (float)getHeight()/pitchCount;
@@ -67,8 +68,8 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
 	lock.enter();
 	// wczytaæ ile jest do narysowania - max getWidth();
 	// dla tylu ile jest do  narysowania narysowaæ
-	int drawNumber = samplesNumber > (getWidth() - 40) ? 
-		(samplesNumber - getWidth() + 40) : samplesNumber;
+	int drawNumber = pitches.size() > (getWidth() - 40) ? 
+		(pitches.size() - getWidth() + 40) : pitches.size();
 	lock.exit();
 	// draw score pitches
 	if (isRecording)
@@ -91,97 +92,67 @@ void LiveAudioPitchDisplayComp::paint (Graphics& g)
     for (int x = 0; x < drawNumber; ++x)
     {
         int y=(float)getHeight() - 
-			allSamples[allSamples.size() - drawNumber + x] * semitone;
+			pitches[pitches.size() - drawNumber + x] * semitone;
 		// getWidth() - 20 -drawNumber + x
         g.drawVerticalLine (getWidth() - 20 -drawNumber + x, y, y+1);
     }
 	lock.exit();
-
-	g.drawFittedText(String(restsPercentage),getWidth()/2,100,100,100,Justification::left,1);
-	g.drawFittedText(String(pitchPercentage),getWidth()/2,150,100,100,Justification::left,1);
+	
+	g.drawFittedText(String(numberOfSamplesRead),getWidth()/2,100,100,100,Justification::left,1);
+	//g.drawFittedText(String(restsPercentage),getWidth()/2,100,100,100,Justification::left,1);
+	//g.drawFittedText(String(pitchPercentage),getWidth()/2,150,100,100,Justification::left,1);
 }
 
-void LiveAudioPitchDisplayComp::timerCallback()
+void AudioPitchPage::timerCallback()
 {
     repaint();
 }
 
-void LiveAudioPitchDisplayComp::audioDeviceAboutToStart (AudioIODevice*)
+void AudioPitchPage::updateSamples(int number, std::vector<float>* samples)
 {
-    zeromem (samples, sizeof (samples));
+	if(numberOfSamplesRead < number)
+	{
+		// przepisac sample
+		for (int i = numberOfSamplesRead; i < number; i++)
+		{
+			allSamples.push_back((*samples)[i]);
+		}
+		numberOfSamplesRead = number;
+
+		float tempSamples[1024];
+		float pitch;
+		float tempPitch;
+		int tempSize;
+		if (numberOfSamplesRead >= 3 * 512)
+		{
+			while(number - numberOfSamplesRecalculated >= 1024)
+			{
+				for (int i = 0; i < 1024; i++)
+					tempSamples[i] = allSamples[numberOfSamplesRecalculated - 512 + i];
+				tempPitch = computePitch(tempSamples) / 1.32f;
+				pitch=std::max<float>(0.0,69+12*(log10(tempPitch/440)/LOG_10_2));
+				pitch-=33;
+
+				lock.enter();
+				tempSize = pitches.size();
+				if (tempSize > 0)
+				{
+					if (pitch > 0 && pitches[tempSize - 1] <= 0 && pitches[tempSize - 2] > 0)
+					{
+						pitches[tempSize - 1] = (pitch + pitches[tempSize - 2]) / 2;
+					}
+				}
+				
+				pitches.push_back(pitch);
+				lock.exit();
+
+				numberOfSamplesRecalculated += 512;
+			}
+		}
+	}
 }
 
-void LiveAudioPitchDisplayComp::audioDeviceStopped()
-{
-    zeromem (samples, sizeof (samples));
-}
-
-void LiveAudioPitchDisplayComp::audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                                       float** outputChannelData, int numOutputChannels, int numSamples)
-{
-	//numSamples=2560 = 512*5
-	// u¿ywamy pierwsze 2048 próbek z ka¿dej paczki
-	// 
-    for(int i = 0; i < 2048; i+=1)//++i)
-    {
-        for (int chan = 0; chan < numInputChannels; ++chan)
-        {
-            if (inputChannelData[chan] != 0)
-                accumulator += fabsf (inputChannelData[chan][i]);
-        }
-
-        const int numSubSamples = 1; // how many input samples go onto one pixel.
-        const float boost = 1.0f;     // how much to boost the levels to make it more visible.
-
-        if (subSample == 0)
-        {
-            samples[nextSample] = accumulator * boost / numSubSamples;
-			//if(samples[nextSample]>2) samples[nextSample]=2;
-			//samples[nextSample]-=1;
-            nextSample = (nextSample + 1) % numElementsInArray (samples);
-            subSample = numSubSamples;
-            accumulator = 0;
-        }
-        else
-        {
-            --subSample;
-        }
-    }
-
-	frequency = computePitch(samples);
-	frequency /= 1.32f;
-	
-	for(int i=1;i<2048;i++)
-		pitch[i-1]=pitch[i] < 0 ? 0 : pitch[i];
-	pitch[2047]=frequency;
-	if(pitch[2045]>0 & pitch[2047]>0 & pitch[2046]<=0)
-		pitch[2046]=(pitch[2045]+pitch[2047])/2;
-
-	frequency = computePitch(samples+1024);
-	frequency /= 1.32f;
-	
-	for(int i=1;i<2048;i++)
-		pitch[i-1]=pitch[i] < 0 ? 0 : pitch[i];
-	pitch[2047]=frequency;
-	if(pitch[2045]>0 & pitch[2047]>0 & pitch[2046]<=0)
-		pitch[2046]=(pitch[2045]+pitch[2047])/2;
-
-	// MIDI
-	float MIDIpitch=std::max<float>(0.0,69+12*(log10(pitch[2047]/440)/LOG_10_2));
-	MIDIpitch-=33;
-
-	lock.enter();
-	allSamples.push_back(MIDIpitch);
-	samplesNumber++;
-	lock.exit();
-
-    // We need to clear the output buffers, in case they're full of junk..
-    for (int i = 0; i < numOutputChannels; ++i)
-        if (outputChannelData[i] != 0)
-            zeromem (outputChannelData[i], sizeof (float) * numSamples);
-}
-
-float LiveAudioPitchDisplayComp::computePitch(float *my_samples){
+float AudioPitchPage::computePitch(float *my_samples){
 	float freq=0.0f;				// freq to return
 	int lev=6;						// levels of analysis
 	float globalMaxTreshold=0.55f;	// threshold of maximum values to consider
@@ -367,112 +338,46 @@ float LiveAudioPitchDisplayComp::computePitch(float *my_samples){
 	return -1;
 }
 
-float LiveAudioPitchDisplayComp::abs(float a){
+float AudioPitchPage::abs(float a){
 	if(a>=0)
 		return a;
 	else
 		return-a;
 }
 
-int LiveAudioPitchDisplayComp::power(int a, int b){
+int AudioPitchPage::power(int a, int b){
 	if(b>0)
 		return a*power(a,b-1);
 	else
 		return 1;
 }
 
-float LiveAudioPitchDisplayComp::mean(float a[]){
+float AudioPitchPage::mean(float a[]){
 	float sum=0;
 	for(int k=0;k<1024;k++) sum+=a[k];
 	return sum/1024;
 }
 
-float LiveAudioPitchDisplayComp::max(float table[]){
+float AudioPitchPage::max(float table[]){
 	float max=table[0];
 	for(int i=1;i<1024;i++)
 		if(table[i]>max) max=table[i];
 	return max;
 }
 
-float LiveAudioPitchDisplayComp::min(float table[]){
+float AudioPitchPage::min(float table[]){
 	float min=table[0];
 	for(int i=1;i<1024;i++)
 		if(table[i]<min) min=table[i];
 	return min;
 }
 
-AudioPitchPage::AudioPitchPage (AudioDeviceManager& deviceManager_)
-    : deviceManager (deviceManager_),
-      liveAudioPDisplayComp (0)
-{
-    addAndMakeVisible (liveAudioPDisplayComp = LiveAudioPitchDisplayComp::getInstance());
-
-    //[UserPreSize]
-    //[/UserPreSize]
-
-    //[Constructor] You can add your own custom stuff here..
-    deviceManager.addAudioCallback (liveAudioPDisplayComp);
-	//XmlElement *xml=deviceManager.createStateXml();
-	//const String path("D:\\xml.txt");
-	//FILE *file;
-	//file=fopen("D:\\xml.txt","w");
-	//fprintf(file,"%s",xml->getText());
-	//fclose(file);
-    //[/Constructor]
-}
-
-AudioPitchPage::~AudioPitchPage()
-{
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    deviceManager.removeAudioCallback (liveAudioPDisplayComp);
-    //[/Destructor_pre]
-
-    deleteAndZero (liveAudioPDisplayComp);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
-}
-
-//==============================================================================
-void AudioPitchPage::paint (Graphics& g)
-{
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    g.fillAll (Colours::lightgrey);
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
-}
-
-void AudioPitchPage::resized()
-{
-    liveAudioPDisplayComp->setBounds (5, 5, getWidth() - 10, getHeight()-10);
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
-}
-
-void AudioPitchPage::playClicked(File directory, int* pitchPosition, Array<float>* scorePitches)
-{
-	liveAudioPDisplayComp->playClicked(directory, pitchPosition, scorePitches);
-}
-
-void AudioPitchPage::stopClicked()
-{
-	liveAudioPDisplayComp->stopClicked();
-}
-
 void AudioPitchPage::setScoreTablePtr(ScoreTable* table)
-{
-	liveAudioPDisplayComp->setScoreTablePtr(table);
-}
-
-void LiveAudioPitchDisplayComp::setScoreTablePtr(ScoreTable* table)
 {
 	scoreTable = table;
 }
 
-void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array<float>* pitches)
+void AudioPitchPage::playClicked(File directory, int* position, Array<float>* pitches)
 {
 	pitchPosition = position;
 	*position = 0;
@@ -486,7 +391,7 @@ void LiveAudioPitchDisplayComp::playClicked(File directory, int* position, Array
 	pitchPercentage = 0;
 }
 
-void LiveAudioPitchDisplayComp::stopClicked()
+void AudioPitchPage::stopClicked()
 {
 	lock.enter();
 	end=samplesNumber;
@@ -514,7 +419,7 @@ void LiveAudioPitchDisplayComp::stopClicked()
 	delete fileOut;
 }
 
-void LiveAudioPitchDisplayComp::calculateDistances()
+void AudioPitchPage::calculateDistances()
 {
 	// wysokoœæ
 	// rytm
@@ -556,6 +461,9 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 	int restErrors = 0;
 	float wrongPitches = 0.0;
 	recordedDistances.resize(recordedNumber);
+	std::vector<float> tempScore, tempRecord;
+	tempScore.resize(5);
+	tempRecord.resize(5);
 	for (int i = 0; i < std::min<int>(scoreNumber, recordedNumber); i++)
 	{
 		if ((recordedSamples[i] <= 0 && scoreSamples[i] > 0) ||
@@ -568,6 +476,55 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 			recordedDistances[i] = abs(recordedSamples[i] - scoreSamples[i]);
 			if(recordedDistances[i] > 0.25)
 			{
+				tempScore[2] = scoreSamples[i];
+				tempRecord[2] = recordedSamples[i];
+
+				if(i > 0)
+				{
+					tempScore[1] = scoreSamples[i-1];
+					tempRecord[1] = recordedSamples[i-1];
+					if(i > 1)
+					{
+						tempScore[0] = scoreSamples[i-2];
+						tempRecord[0] = recordedSamples[i-2];
+					}
+					else
+					{
+						tempScore[0] = scoreSamples[i-1];
+						tempRecord[0] = recordedSamples[i-1];
+					}
+				}
+				else
+				{
+					tempScore[1] = scoreSamples[i];
+					tempRecord[1] = recordedSamples[i];
+					tempScore[0] = scoreSamples[i];
+					tempRecord[0] = recordedSamples[i];
+				}
+				if(i < scoreSamples.size())
+				{
+					tempScore[3] = scoreSamples[i+1];
+					tempRecord[3] = recordedSamples[i+1];
+					if(i < scoreSamples.size() - 1)
+					{
+						tempScore[4] = scoreSamples[i+2];
+						tempRecord[4] = recordedSamples[i+2];
+					}
+					else
+					{
+						tempScore[4] = scoreSamples[i+1];
+						tempRecord[4] = recordedSamples[i+1];
+					}
+				}
+				else
+				{
+					tempScore[3] = scoreSamples[i];
+					tempRecord[3] = recordedSamples[i];
+					tempScore[4] = scoreSamples[i];
+					tempRecord[4] = recordedSamples[i];
+				}
+
+
 				if (recordedDistances[i] < 0.75)
 					wrongPitches += 0.5 * recordedDistances[i];
 				else
@@ -583,4 +540,9 @@ void LiveAudioPitchDisplayComp::calculateDistances()
 	scoreTable->pitchPercentage = pitchPercentage;
 	scoreTable->rythmPercentage = restsPercentage;
 	scoreTable->updateScores();
+}
+
+void AudioPitchPage::calculateIfProlongedNote(std::vector<float> score, std::vector<float> record)
+{
+
 }

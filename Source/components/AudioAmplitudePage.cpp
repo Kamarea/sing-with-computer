@@ -103,74 +103,94 @@ private:
 };
 
 
-struct FileHeader
-{
-	char chunkID[4];
-	int chunkSize;
-	char format[4];
-
-	char subchunk1ID[4];
-	int subchunk1Size;
-	short int audioFormat;
-	short int numChannels;
-	int sampleRate;
-	int byteRate;
-	short int blockAlign;
-	short int bitsPerSample;
-
-	char subchunk2ID[4];
-	int subchunk2Size;
-};
-
-LiveAudioAmplitudeDisplayComp* LiveAudioAmplitudeDisplayComp::instance;
+AudioAmplitudePage* AudioAmplitudePage::instance;
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
-LiveAudioAmplitudeDisplayComp::LiveAudioAmplitudeDisplayComp()
+AudioAmplitudePage::AudioAmplitudePage()
 {
-    nextSample = subSample = 0;
     accumulator = 0;
-    zeromem (samples, sizeof (samples));
     setOpaque (true);
+	
+	numberOfSamplesRead = 0;
+	numberOfSamplesRecalculated = 0;
 	
 	startTimer (1000 / 50); // use a timer to keep repainting this component
 }
 
-LiveAudioAmplitudeDisplayComp::~LiveAudioAmplitudeDisplayComp()
+AudioAmplitudePage::~AudioAmplitudePage()
 {
 	// First, clear this pointer to stop the audio callback from using our writer object..
         
 }
 
-void LiveAudioAmplitudeDisplayComp::paint (Graphics& g)
+void AudioAmplitudePage::paint (Graphics& g)
 {
     g.fillAll (Colours::white);
 
     g.setColour (Colours::black);
     const float midY = getHeight() * 0.5f;
-    int sampleNum = (nextSample + numElementsInArray (samples) - 1);
+    //int sampleNum = (nextSample + numElementsInArray (samples) - 1);
 
-    for (int x = jmin (getWidth(), (int) numElementsInArray (samples)); --x >= 0;)
+	lock.enter();
+	// wczytaæ ile jest do narysowania - max getWidth();
+	// dla tylu ile jest do  narysowania narysowaæ
+	int drawNumber = amplitudes.size() > (getWidth()) ? 
+		(getWidth()) : amplitudes.size();
+
+    for (int x = 0; x < drawNumber; ++x)
     {
-        const float sampleSize = midY * samples [sampleNum-- % numElementsInArray (samples)];
-        g.drawVerticalLine (x, midY - sampleSize, midY + sampleSize);
+        int y=midY * amplitudes[amplitudes.size() - drawNumber + x];
+		// getWidth() - 20 -drawNumber + x
+        g.drawVerticalLine (getWidth() - drawNumber + x, midY - y, midY + y);
     }
+	lock.exit();
+	//g.drawHorizontalLine(midY, 0, getWidth());
 }
 
-void LiveAudioAmplitudeDisplayComp::timerCallback()
+void AudioAmplitudePage::timerCallback()
 {
     repaint();
 }
 
-void LiveAudioAmplitudeDisplayComp::audioDeviceAboutToStart (AudioIODevice*)
+void AudioAmplitudePage::updateSamples(int number, std::vector<float>* samples)
 {
-    zeromem (samples, sizeof (samples));
+	int rate = 100;
+	if(numberOfSamplesRead < number)
+	{
+		// przepisac sample
+		for (int i = numberOfSamplesRead; i < number; i++)
+		{
+			allSamples.push_back((*samples)[i]);
+		}
+		numberOfSamplesRead = number;
+
+		int count = 0;
+		float accumulator = 0;
+		if (numberOfSamplesRead >= rate)
+		{
+			while (number - numberOfSamplesRecalculated >= rate)
+			{
+				if (count < rate)
+				{
+					accumulator += allSamples[numberOfSamplesRecalculated];
+					count++;
+				}
+				else
+				{
+					lock.enter();
+					amplitudes.push_back(accumulator / rate);
+					lock.exit();
+					accumulator = 0;
+					count = 0;
+				}
+
+				numberOfSamplesRecalculated++;
+			}
+		}
+	}
 }
 
-void LiveAudioAmplitudeDisplayComp::audioDeviceStopped()
-{
-    zeromem (samples, sizeof (samples));
-}
-
+/*
 void convertAudio(const float** inputData, int numChanIn, int** outputData, int numSamples)
 {
 	for (int i=0;i<numSamples;++i)
@@ -185,9 +205,9 @@ void convertAudio(const float** inputData, int numChanIn, int** outputData, int 
 			//	outputData[chan][i] = (int)(inputData[chan][i] * 32767.0);
 		}
 	}
-}
+}*/
 
-void LiveAudioAmplitudeDisplayComp::audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
+/*void AudioAmplitudePage::audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
                                                        float** outputChannelData, int numOutputChannels, int numSamples)
 {
 	/*int **inputInt;
@@ -196,7 +216,7 @@ void LiveAudioAmplitudeDisplayComp::audioDeviceIOCallback (const float** inputCh
 		inputInt[i] = new int[numSamples];
 
 	convertAudio(inputChannelData, numInputChannels,inputInt,numSamples);
-	audioFormatWriter->write(inputChannelData,numSamples);*/
+	audioFormatWriter->write(inputChannelData,numSamples);
 
 	short int tmp;
 	char charArray[2];
@@ -211,7 +231,7 @@ void LiveAudioAmplitudeDisplayComp::audioDeviceIOCallback (const float** inputCh
 				charArray[0] = tmp >> 8;
 				charArray[1] = tmp;
 				fileOutput << charArray[0];
-				fileOutput << charArray[1];*/
+				fileOutput << charArray[1];
 			}
         }
 
@@ -235,10 +255,10 @@ void LiveAudioAmplitudeDisplayComp::audioDeviceIOCallback (const float** inputCh
     for (int i = 0; i < numOutputChannels; ++i)
         if (outputChannelData[i] != 0)
             zeromem (outputChannelData[i], sizeof (float) * numSamples);
-}
+}*/
 
 
-
+/*
 AudioAmplitudePage::AudioAmplitudePage (AudioDeviceManager& deviceManager_)
     : deviceManager (deviceManager_),
       liveAudioAmplitudeDisplayComp (0)
@@ -302,3 +322,4 @@ void AudioAmplitudePage::stopClicked()
     deviceManager.removeAudioCallback (recorder);
 	recorder = 0;
 }
+*/

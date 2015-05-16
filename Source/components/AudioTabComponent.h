@@ -27,6 +27,7 @@
 #include "AudioAmplitudePage.h"
 #include "AudioSpectrogramPage.h"
 #include "AudioPitchPage.h"
+#include "SoundInput.h"
 //#include "ScoreParts.h"
 
 
@@ -79,10 +80,12 @@ public:
 	AudioSpectrogramPage* m_spectroPage;
 	AudioAmplitudePage* m_ampliPage;
 	AudioPitchPage* m_pitchPage;
+	SoundInput* m_soundInput;
 	Array<ScorePart> score;
 	Array<float> scorePitchesFreq;
 	Array<float> scorePitchesMIDI;
 	Array<Note> scorePitches;
+	std::vector<float> allSamples;
 	int actualPitchPosition;
 	
 	ImageButton* playButton;
@@ -96,6 +99,7 @@ public:
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     AudioDeviceManager deviceManager;
+	CriticalSection lock;
     //[/UserVariables]
 
     //==============================================================================

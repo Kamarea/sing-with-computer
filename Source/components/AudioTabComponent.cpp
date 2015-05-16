@@ -48,12 +48,12 @@ public:
 		File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
 		directory.createDirectory();
 		
-		m_component->m_ampliPage->playClicked(directory);
+		//m_component->m_ampliPage->playClicked(directory);
 		m_component->m_spectroPage->playClicked(directory);
 		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitchesMIDI));
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
-		m_component->startTimer (120);
+		//m_component->startTimer (120);
 	};
 	AudioTabComponent* m_component;
 };
@@ -67,7 +67,7 @@ public:
 	};
 	void buttonClicked(Button* button)
 	{
-		m_component->m_ampliPage->stopClicked();
+		//m_component->m_ampliPage->stopClicked();
 		m_component->m_spectroPage->stopClicked();
 		m_component->m_pitchPage->stopClicked();
 		m_component->stopButton->setEnabled(false);
@@ -147,9 +147,12 @@ void AudioTabComponent::init(TabbedComponent* tabbedComponent, bool isScore)
 	hasScore = isScore;
     addAndMakeVisible (tabbedComponent);
     tabbedComponent->setTabBarDepth (30);
-	m_ampliPage =  new AudioAmplitudePage(deviceManager);
-	m_spectroPage =  new AudioSpectrogramPage(deviceManager);
-	m_pitchPage =  new AudioPitchPage(deviceManager);
+
+	m_soundInput = SoundInput::getInstance();
+	deviceManager.addAudioCallback(m_soundInput);
+	m_ampliPage =  AudioAmplitudePage::getInstance();
+	m_spectroPage =  AudioSpectrogramPage::getInstance();
+	m_pitchPage =  AudioPitchPage::getInstance();
     tabbedComponent->addTab (L"Amplituda", Colours::lightgrey, m_ampliPage, true);
     tabbedComponent->addTab (L"Spektrogram", Colours::lightgrey, m_spectroPage, true);
     tabbedComponent->addTab (L"Wysokoœæ", Colours::lightgrey, m_pitchPage, true);
@@ -187,6 +190,7 @@ void AudioTabComponent::init(TabbedComponent* tabbedComponent, bool isScore)
     setSize (getWidth(), getHeight()/2);
 	//tabbedComponent->setBounds(0,getHeight()/2,getWidth(),getHeight()/2);//getHeight()/2
 	
+	startTimer(20);
 }
 
 AudioTabComponent::~AudioTabComponent()
@@ -195,11 +199,14 @@ AudioTabComponent::~AudioTabComponent()
     //[/Destructor_pre]
 	//if(stopButton->isEnabled())
 	//	stopButton->triggerClick();
+	deviceManager.removeAudioCallback (m_soundInput);
 
     deleteAndZero (tabbedComponent);
 	deleteAndZero (playButton);
 	deleteAndZero (stopButton);
-	deleteAndZero (scoreTable);
+	deleteAndZero (m_soundInput);
+	if (score.size() > 0)
+		deleteAndZero (scoreTable);
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
@@ -207,7 +214,21 @@ AudioTabComponent::~AudioTabComponent()
 
 void AudioTabComponent::timerCallback()
 {
-    actualPitchPosition += 4;
+	lock.enter();
+	m_soundInput->lock.enter();
+	int actualNumber = allSamples.size();
+	for(int i = actualNumber; i < m_soundInput->allSamples.size(); i++)
+	{
+		allSamples.push_back(m_soundInput->allSamples[i]);
+	}
+	actualNumber = allSamples.size();
+	m_soundInput->lock.exit();
+	// launch all calculators
+	m_pitchPage->updateSamples(actualNumber, &allSamples);
+	m_ampliPage->updateSamples(actualNumber, &allSamples);
+	m_spectroPage->updateSamples(actualNumber, &allSamples);
+	lock.exit();
+
 }
 
 void AudioTabComponent::paint (Graphics& g)

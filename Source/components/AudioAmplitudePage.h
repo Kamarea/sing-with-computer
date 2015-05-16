@@ -8,41 +8,42 @@
 //class AudioRecorder;
 class AudioRecorder;
 
-class LiveAudioAmplitudeDisplayComp  : public Component,
-                                   public AudioIODeviceCallback,
+class AudioAmplitudePage  : public Component,
                                    public Timer
 {
 public:
     //==============================================================================
-	static LiveAudioAmplitudeDisplayComp* getInstance()
+	static AudioAmplitudePage* getInstance()
 	{
 		if (instance == NULL)
 		{
-			instance = new LiveAudioAmplitudeDisplayComp();
+			instance = new AudioAmplitudePage();
 		}
 		return instance;
 	};
-    ~LiveAudioAmplitudeDisplayComp();
+    ~AudioAmplitudePage();
 
     void paint (Graphics& g);
     void timerCallback();
 
-    void audioDeviceAboutToStart (AudioIODevice* device);
-    void audioDeviceStopped();
-    void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                float** outputChannelData, int numOutputChannels, int numSamples);
-private:
-	static LiveAudioAmplitudeDisplayComp* instance;
-    float samples [2048];
-    int nextSample, subSample;
-    float accumulator;
+    void updateSamples(int number, std::vector<float>* samples);
 
-    LiveAudioAmplitudeDisplayComp();
-    LiveAudioAmplitudeDisplayComp (const LiveAudioAmplitudeDisplayComp&);
-    LiveAudioAmplitudeDisplayComp& operator= (const LiveAudioAmplitudeDisplayComp&);
+private:
+	static AudioAmplitudePage* instance;
+	std::vector<float> allSamples;
+	std::vector<float> amplitudes;
+    float accumulator;
+	CriticalSection lock;
+	
+	int numberOfSamplesRead;
+	int numberOfSamplesRecalculated;
+
+    AudioAmplitudePage();
+    AudioAmplitudePage (const AudioAmplitudePage&);
+    AudioAmplitudePage& operator= (const AudioAmplitudePage&);
 };
 
-
+/*
 class AudioAmplitudePage  : public Component
 {
 public:
@@ -81,5 +82,5 @@ private:
     AudioAmplitudePage (const AudioAmplitudePage&);
     const AudioAmplitudePage& operator= (const AudioAmplitudePage&);
 };
-
+*/
 

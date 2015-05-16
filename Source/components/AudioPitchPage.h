@@ -12,21 +12,20 @@ class ScoreTable;
    coming into the audio input.
 */
 
-class LiveAudioPitchDisplayComp  : public Component,
-                                   public AudioIODeviceCallback,
-                                   public Timer
+class AudioPitchPage  : public Component,
+                        public Timer
 {
 public:
     //==============================================================================
-	static LiveAudioPitchDisplayComp* getInstance()
+	static AudioPitchPage* getInstance()
 	{
 		if (instance == NULL)
 		{
-			instance = new LiveAudioPitchDisplayComp();
+			instance = new AudioPitchPage();
 		}
 		return instance;
 	};
-    ~LiveAudioPitchDisplayComp();
+    ~AudioPitchPage();
 
     void paint (Graphics& g);
     void timerCallback();
@@ -34,23 +33,22 @@ public:
 	void stopClicked();
 	void calculateDistances();
 
-    void audioDeviceAboutToStart (AudioIODevice* device);
-    void audioDeviceStopped();
-    void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                float** outputChannelData, int numOutputChannels, int numSamples);
-	Array<float> pitches;
+	std::vector<float> pitches;
 	int* pitchPosition;
 	Array<float> scorePitches;
 	void setScoreTablePtr(ScoreTable*);
+	void calculateIfProlongedNote(std::vector<float>, std::vector<float>);
+	void updateSamples(int number, std::vector<float>* samples);
 
 private:
-	static LiveAudioPitchDisplayComp* instance;
-	int numSamplesX;
-    float samples [2048];
+	static AudioPitchPage* instance;
+	int numberOfSamplesRead;
+	int numberOfSamplesRecalculated;
+	///int numSamplesX;
+    //float samples [2048];
 	float pitch[2048];
 	float pitchMIDI[2048];
 	float frequency;
-    int nextSample, subSample;
     float accumulator;
 	int test;
 	FileOutputStream* fileOut;
@@ -75,12 +73,12 @@ private:
 	float min(float a[]);
 
 	
-    LiveAudioPitchDisplayComp();
-    LiveAudioPitchDisplayComp (const LiveAudioPitchDisplayComp&);
-    LiveAudioPitchDisplayComp& operator= (const LiveAudioPitchDisplayComp&);
+    AudioPitchPage();
+    AudioPitchPage (const AudioPitchPage&);
+    AudioPitchPage& operator= (const AudioPitchPage&);
 };
 
-
+/*
 class AudioPitchPage  : public Component
 {
 public:
@@ -116,6 +114,6 @@ private:
     // (prevent copy constructor and operator= being generated..)
     AudioPitchPage (const AudioPitchPage&);
     const AudioPitchPage& operator= (const AudioPitchPage&);
-};
+};*/
 
 #endif // AUDIO_PITCH_PAGE_H

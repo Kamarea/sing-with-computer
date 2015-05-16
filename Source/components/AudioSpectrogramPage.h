@@ -6,41 +6,40 @@
 /* This component scrolls a continuous waveform showing the audio that's currently
    coming into the audio input.
 */
-class LiveAudioSpectrogramDisplayComp  : public Component,
-										 public AudioIODeviceCallback,
-										 public Timer
+class AudioSpectrogramPage  : public Component,
+							  public Timer
 {
 public:
     //==============================================================================
-	static LiveAudioSpectrogramDisplayComp* getInstance()
+	static AudioSpectrogramPage* getInstance()
 	{
 		if (instance == NULL)
 		{
-			instance = new LiveAudioSpectrogramDisplayComp();
+			instance = new AudioSpectrogramPage();
 		}
 		return instance;
 	};
-    LiveAudioSpectrogramDisplayComp();
-    ~LiveAudioSpectrogramDisplayComp();
+    AudioSpectrogramPage();
+    ~AudioSpectrogramPage();
 
     void paint (Graphics& g);
     void timerCallback();
 	void playClicked(File directory);
 	void stopClicked();
+	void updateSamples(int number, std::vector<float>* samples);
 
-    void audioDeviceAboutToStart (AudioIODevice* device);
-    void audioDeviceStopped();
-    void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                float** outputChannelData, int numOutputChannels, int numSamples);
 private:
-	static LiveAudioSpectrogramDisplayComp* instance;
-    float samples[1024];
+	static AudioSpectrogramPage* instance;
+	int numberOfSamplesRead;
+	int numberOfSamplesRecalculated;
+    //float samples[1024];
 	float transformSamples[2048];
 	float spectroSamples[1024];
+	std::vector<float> allSamples;
 	std::vector<std::vector<float>> allSpectroSamples;
-	float paintSamples[2048][1024];
-    int nextSample, subSample;
-    float accumulator;
+	//float paintSamples[2048][1024];
+    //int nextSample, subSample;
+    //float accumulator;
 	int counter;
 	Image image;
 	FileOutputStream* fileOutput;
@@ -49,11 +48,11 @@ private:
 	CriticalSection lock;
 	bool isRecording;
 
-    LiveAudioSpectrogramDisplayComp (const LiveAudioSpectrogramDisplayComp&);
-    LiveAudioSpectrogramDisplayComp& operator= (const LiveAudioSpectrogramDisplayComp&);
+    AudioSpectrogramPage (const AudioSpectrogramPage&);
+    AudioSpectrogramPage& operator= (const AudioSpectrogramPage&);
 };
 
-
+/*
 class AudioSpectrogramPage  : public Component
 {
 public:
@@ -91,5 +90,4 @@ private:
     AudioSpectrogramPage (const AudioSpectrogramPage&);
     const AudioSpectrogramPage& operator= (const AudioSpectrogramPage&);
 };
-
-
+*/
