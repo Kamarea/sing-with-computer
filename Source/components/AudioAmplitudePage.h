@@ -5,8 +5,33 @@
 /* This component scrolls a continuous waveform showing the audio that's currently
    coming into the audio input.
 */
-//class AudioRecorder;
-class AudioRecorder;
+
+class AudioRecorder  : public AudioIODeviceCallback
+{
+public:
+    AudioRecorder();
+    ~AudioRecorder();
+
+    //==============================================================================
+    void startRecording (const File& file);
+    void stop();
+    bool isRecording() const;
+
+    //==============================================================================
+    void audioDeviceAboutToStart (AudioIODevice* device);
+    void audioDeviceStopped();
+    void audioDeviceIOCallback (const float** inputChannelData, int /*numInputChannels*/,
+                                float** outputChannelData, int numOutputChannels,
+                                int numSamples);
+
+private:
+    TimeSliceThread backgroundThread; // the thread that will write our audio data to disk
+    ScopedPointer<AudioFormatWriter::ThreadedWriter> threadedWriter; // the FIFO used to buffer the incoming data
+    double sampleRate;
+
+    CriticalSection writerLock;
+    AudioFormatWriter::ThreadedWriter* volatile activeWriter;
+};
 
 class AudioAmplitudePage  : public Component,
                                    public Timer

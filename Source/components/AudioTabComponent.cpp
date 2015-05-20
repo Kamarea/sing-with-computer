@@ -48,7 +48,10 @@ public:
 		File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
 		directory.createDirectory();
 		
-		//m_component->m_ampliPage->playClicked(directory);
+		m_component->recorder = new AudioRecorder();
+		m_component->deviceManager.addAudioCallback (m_component->recorder);
+		m_component->recorder->startRecording (directory.getNonexistentChildFile("rawSamples", ".wav"));
+		m_component->isRecording = true;
 		m_component->m_spectroPage->playClicked(directory);
 		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitchesMIDI));
 		m_component->stopButton->setEnabled(true);
@@ -67,12 +70,16 @@ public:
 	};
 	void buttonClicked(Button* button)
 	{
-		//m_component->m_ampliPage->stopClicked();
+		m_component->isRecording = false;
 		m_component->m_spectroPage->stopClicked();
 		m_component->m_pitchPage->stopClicked();
+		m_component->recorder->stop();
+		m_component->deviceManager.removeAudioCallback (m_component->recorder);
+		//delete m_component->recorder;
+		m_component->recorder = 0;
 		m_component->stopButton->setEnabled(false);
 		m_component->playButton->setEnabled(true);
-		m_component->actualPitchPosition = 0;
+		//m_component->actualPitchPosition = 0;
 	};
 	AudioTabComponent* m_component;
 };
@@ -100,6 +107,11 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
+	AudioDeviceManager::AudioDeviceSetup setup;
+	deviceManager.getAudioDeviceSetup(setup);
+	int sampleRate = (setup.sampleRate * 60) / 512 / 2.1;
+
+	m_pitchPage->hasScore = true;
 	m_pitchPage->setScoreTablePtr(scoreTable);
 	// zamiana z dziedziny zmian na czas
 	// n / min -> kwantujê do 10/sek -> 600 / min -> 600 / n
@@ -120,7 +132,12 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 		float pitchMIDI;
 		for (int k = 1; k < score[i].notes.size(); k++)
 		{
-			length = (1100 / actualTempo) * (score[i].notes[k].duration);
+			// zmienic, dostosowac sampleRate
+			// przeniesc odliczanie ze score
+			// dorobic przeliczanie score do updatePitches
+			// dorobic rysowanie score w PitchPage
+			// potem narysowac pitch w spectrogramie
+			length = (sampleRate / actualTempo) * (score[i].notes[k].duration);
 			freq = getPitch(score[i].notes[k].pitch);
 			if (score[i].notes[k].octave > 0)
 				freq *= 2 * score[i].notes[k].octave; 
@@ -133,7 +150,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 			{
 				scorePitches.add(score[i].notes[k]);
 				scorePitchesFreq.add(freq);
-				scorePitchesMIDI.add(pitchMIDI);
+				scorePitchesMIDI.push_back(pitchMIDI);
 			}
 		}
 	}
@@ -224,8 +241,8 @@ void AudioTabComponent::timerCallback()
 	actualNumber = allSamples.size();
 	m_soundInput->lock.exit();
 	// launch all calculators
-	m_pitchPage->updateSamples(actualNumber, &allSamples);
 	m_ampliPage->updateSamples(actualNumber, &allSamples);
+	m_pitchPage->updateSamples(actualNumber, &allSamples);
 	m_spectroPage->updateSamples(actualNumber, &allSamples);
 	lock.exit();
 

@@ -83,10 +83,13 @@ public:
 	SoundInput* m_soundInput;
 	Array<ScorePart> score;
 	Array<float> scorePitchesFreq;
-	Array<float> scorePitchesMIDI;
+	std::vector<float> scorePitchesMIDI;
 	Array<Note> scorePitches;
 	std::vector<float> allSamples;
 	int actualPitchPosition;
+	bool isRecording;
+	ScopedPointer<AudioRecorder> recorder;
+    AudioDeviceManager deviceManager;
 	
 	ImageButton* playButton;
 	ImageButton* stopButton;
@@ -98,7 +101,6 @@ public:
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-    AudioDeviceManager deviceManager;
 	CriticalSection lock;
     //[/UserVariables]
 

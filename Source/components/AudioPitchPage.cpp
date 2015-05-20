@@ -16,12 +16,14 @@ AudioPitchPage::AudioPitchPage()
     accumulator = 0;
 	numberOfSamplesRead = 0;
 	numberOfSamplesRecalculated = 512;
+	recordedScoreNumber = 0;
     //zeromem (samples, sizeof (samples));
     setOpaque (true);
 	test=0;
 	frequency=-2;
 	samplesNumber=0;
 	isRecording = false;
+	hasScore = false;
 
     startTimer (1000 / 50); // use a timer to keep repainting this component
 }
@@ -69,22 +71,27 @@ void AudioPitchPage::paint (Graphics& g)
 	// wczytaæ ile jest do narysowania - max getWidth();
 	// dla tylu ile jest do  narysowania narysowaæ
 	int drawNumber = pitches.size() > (getWidth() - 40) ? 
-		(pitches.size() - getWidth() + 40) : pitches.size();
+		(getWidth() - 40) : pitches.size();
 	lock.exit();
 	// draw score pitches
 	if (isRecording)
 	{
+		int recordedSize = (pitches.size() - begin) > (getWidth() - 40) ?
+			(getWidth() - 40) : (pitches.size() - begin);
 		g.setColour(Colours::green);
-		for (int x = 0; x < *pitchPosition; ++x)
+		for (int x = 0; x < recordedSize; ++x)
 		{
-			int y=getHeight() - (scorePitches[x] - 33) * semitone;
-
-	        g.drawVerticalLine (getWidth() - 20 - *pitchPosition + x, y, y+1);
+			if (x < scorePitches.size())
+			{
+				int y=getHeight() - (scorePitches[x] - 33) * semitone;
+				g.drawVerticalLine (getWidth() - 20  - recordedSize + x, y, y+1);
+			}
 		}
 
-		if ( *pitchPosition >= scorePitches.size() - 3 &&
+		/*if ( *pitchPosition >= scorePitches.size() - 3 &&
 			 *pitchPosition <= scorePitches.size() + 3)
 			recordedScoreNumber = samplesNumber - begin;
+			*/
 	}
 	// draw recorded pitches
 	g.setColour(Colours::blue);
@@ -92,7 +99,7 @@ void AudioPitchPage::paint (Graphics& g)
     for (int x = 0; x < drawNumber; ++x)
     {
         int y=(float)getHeight() - 
-			pitches[pitches.size() - drawNumber + x] * semitone;
+			(pitches[pitches.size() - drawNumber + x] - 33) * semitone;
 		// getWidth() - 20 -drawNumber + x
         g.drawVerticalLine (getWidth() - 20 -drawNumber + x, y, y+1);
     }
@@ -131,11 +138,10 @@ void AudioPitchPage::updateSamples(int number, std::vector<float>* samples)
 					tempSamples[i] = allSamples[numberOfSamplesRecalculated - 512 + i];
 				tempPitch = computePitch(tempSamples) / 1.32f;
 				pitch=std::max<float>(0.0,69+12*(log10(tempPitch/440)/LOG_10_2));
-				pitch-=33;
 
 				lock.enter();
 				tempSize = pitches.size();
-				if (tempSize > 0)
+				if (tempSize > 1)
 				{
 					if (pitch > 0 && pitches[tempSize - 1] <= 0 && pitches[tempSize - 2] > 0)
 					{
@@ -377,14 +383,14 @@ void AudioPitchPage::setScoreTablePtr(ScoreTable* table)
 	scoreTable = table;
 }
 
-void AudioPitchPage::playClicked(File directory, int* position, Array<float>* pitches)
+void AudioPitchPage::playClicked(File directory, int* position, std::vector<float>* scorePitchesIn)
 {
 	pitchPosition = position;
 	*position = 0;
-	scorePitches = *pitches;
+	scorePitches = *scorePitchesIn;
 	fileOut = new FileOutputStream(directory.getChildFile("pitchSamples.smp"));
 	lock.enter();
-	begin=samplesNumber;
+	begin=pitches.size();
 	isRecording = true;
 	lock.exit();
 	restsPercentage = 0;
@@ -394,145 +400,100 @@ void AudioPitchPage::playClicked(File directory, int* position, Array<float>* pi
 void AudioPitchPage::stopClicked()
 {
 	lock.enter();
-	end=samplesNumber;
+	end=pitches.size();
 	String line;
 	std::vector<float> writeSamples;
 	writeSamples.resize(end-begin);
 	// TODO change
 	for (int i=begin;i<end;i++)
 	{
-		writeSamples[i-begin] = allSamples[i];
+		writeSamples[i-begin] = pitches[i];
 	}
 
-	recordedSamples.resize(writeSamples.size());
-	for (int i = 0; i < writeSamples.size(); i++)
-	{
-		recordedSamples[i] = writeSamples [i];
-	}
 
 	isRecording = false;
-	lock.exit();
-	fileOut->write(writeSamples.data(),writeSamples.size());
-
-	calculateDistances();
-
+	bool res = fileOut->write(writeSamples.data(),writeSamples.size());
 	delete fileOut;
+	lock.exit();
+
+	if(hasScore)
+	{
+		recordedSamples.resize(writeSamples.size());
+		for (int i = 0; i < writeSamples.size(); i++)
+		{
+			recordedSamples[i] = writeSamples [i];
+		}
+		calculateDistances();
+	}
 }
 
 void AudioPitchPage::calculateDistances()
 {
-	// wysokoœæ
-	// rytm
-	// dynamika
-	// akcentowanie
+	// wysokoœæ done
+	// rytm done
 
-	// wysokoœæ:
-	// 1. zwyk³a odleg³oœæ
-	//  - próg b³êdu pomiaru
-	//  - cisza
-	//  - skalowanie
-	//  - synchronizacja
-
-	// synchronizacja recorded i score samples
-	int recordedNumber = recordedScoreNumber;
-	int scoreNumber = scorePitches.size();
-	float synchroStep = (float)(scoreNumber - recordedNumber) / (float)recordedNumber;
-	float synchroCount = 0.0;
-	int counter = 0;
-	std::vector<float> scoreSamples;
-	scoreSamples.resize(scorePitches.size());
-	for (int i=0; i < scorePitches.size(); ++i)
-		scoreSamples[i] = scorePitches[i];
-
-	for (std::vector<float>::iterator it = recordedSamples.begin(); it != recordedSamples.end(); ++it)
+	int recordedNumber = std::min<int>(scorePitches.size(), end - begin);
+	int restErrors = 0;
+	int rythmErrors = 0;
+	float wrongPitches = 0.0;
+	recordedDistances.resize(std::min<int>(end - begin, scorePitches.size()));
+	std::vector<float> shortScore;
+	shortScore.push_back(scorePitches[0]);
+	for(int i = 0; i < recordedNumber; i++)
 	{
-		synchroCount += synchroStep;
-		if (synchroCount > 1)
+		if (scorePitches[i] != shortScore[shortScore.size() - 1])
 		{
-			synchroCount -= 1;
-			counter++;
-			float value = *it;
-			it = recordedSamples.insert(it, value);
-			++it;
+			shortScore.push_back(scorePitches[i]);
 		}
 	}
-	recordedNumber += counter;
-
-	int restErrors = 0;
-	float wrongPitches = 0.0;
-	recordedDistances.resize(recordedNumber);
+	shortScore.push_back(scorePitches[recordedNumber - 1]);
+	int shortScoreIter = 0;
 	std::vector<float> tempScore, tempRecord;
 	tempScore.resize(5);
 	tempRecord.resize(5);
-	for (int i = 0; i < std::min<int>(scoreNumber, recordedNumber); i++)
+	for (int i = 0; i < recordedNumber; i++)
 	{
-		if ((recordedSamples[i] <= 0 && scoreSamples[i] > 0) ||
-			(recordedSamples[i] > 0 && scoreSamples[i] <= 0))
+		if ((recordedSamples[i] <= 0 && scorePitches[i] > 0) ||
+			(recordedSamples[i] > 0 && scorePitches[i] <= 0))
 		{
 			restErrors++;
 		}
 		else
 		{
-			recordedDistances[i] = abs(recordedSamples[i] - scoreSamples[i]);
-			if(recordedDistances[i] > 0.25)
+			recordedDistances[i] = abs(recordedSamples[i] - scorePitches[i]);
+			if(recordedDistances[i] > 0.4)
 			{
-				tempScore[2] = scoreSamples[i];
-				tempRecord[2] = recordedSamples[i];
-
-				if(i > 0)
+				if (abs(recordedSamples[i] - shortScore[std::min<int>(shortScore.size() - 1,shortScoreIter + 1)]) < 0.4)
 				{
-					tempScore[1] = scoreSamples[i-1];
-					tempRecord[1] = recordedSamples[i-1];
-					if(i > 1)
-					{
-						tempScore[0] = scoreSamples[i-2];
-						tempRecord[0] = recordedSamples[i-2];
-					}
+					recordedDistances[i] = abs(recordedSamples[i] - 
+							shortScore[std::min<int>(shortScore.size() - 1,shortScoreIter + 1)]);
+					if (shortScoreIter < shortScore.size())
+						shortScoreIter++;
+					rythmErrors++;
+				}
+				else if (abs(recordedSamples[i] - shortScore[std::min<int>(shortScore.size() - 1,shortScoreIter + 1)]) < 0.4)
+				{
+					recordedDistances[i] = abs(recordedSamples[i] - 
+							shortScore[std::min<int>(shortScore.size() - 1,shortScoreIter + 1)]);
+					rythmErrors++;
+				}
+				else
+				{
+					if (recordedDistances[i] < 0.75)
+						wrongPitches += 0.5 * recordedDistances[i];
 					else
-					{
-						tempScore[0] = scoreSamples[i-1];
-						tempRecord[0] = recordedSamples[i-1];
-					}
+						wrongPitches += 1;
 				}
-				else
-				{
-					tempScore[1] = scoreSamples[i];
-					tempRecord[1] = recordedSamples[i];
-					tempScore[0] = scoreSamples[i];
-					tempRecord[0] = recordedSamples[i];
-				}
-				if(i < scoreSamples.size())
-				{
-					tempScore[3] = scoreSamples[i+1];
-					tempRecord[3] = recordedSamples[i+1];
-					if(i < scoreSamples.size() - 1)
-					{
-						tempScore[4] = scoreSamples[i+2];
-						tempRecord[4] = recordedSamples[i+2];
-					}
-					else
-					{
-						tempScore[4] = scoreSamples[i+1];
-						tempRecord[4] = recordedSamples[i+1];
-					}
-				}
-				else
-				{
-					tempScore[3] = scoreSamples[i];
-					tempRecord[3] = recordedSamples[i];
-					tempScore[4] = scoreSamples[i];
-					tempRecord[4] = recordedSamples[i];
-				}
-
-
-				if (recordedDistances[i] < 0.75)
-					wrongPitches += 0.5 * recordedDistances[i];
-				else
-					wrongPitches += 1;
+			}
+			else
+			{
+				if(shortScoreIter < shortScore.size())
+					if (scorePitches[i] != shortScore[shortScoreIter])
+						shortScoreIter++;
 			}
 		}
 	}
-	float restsWrongPercentage = (float)restErrors / (float)recordedNumber;
+	float restsWrongPercentage = (float)(restErrors + rythmErrors) / (float)recordedNumber;
 	float pitchWrongPercentage = (float)wrongPitches / (float)recordedNumber;
 	restsPercentage = 100 * (1 - restsWrongPercentage);
 	pitchPercentage = 100 * (1 - pitchWrongPercentage);

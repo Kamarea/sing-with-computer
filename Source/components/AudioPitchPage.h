@@ -29,13 +29,15 @@ public:
 
     void paint (Graphics& g);
     void timerCallback();
-	void playClicked(File directory, int* pitchPosition, Array<float>* scorePitches);
+	void playClicked(File directory, int* pitchPosition, std::vector<float>* scorePitches);
 	void stopClicked();
 	void calculateDistances();
 
 	std::vector<float> pitches;
 	int* pitchPosition;
-	Array<float> scorePitches;
+	std::vector<float> scorePitches;
+	bool hasScore;
+
 	void setScoreTablePtr(ScoreTable*);
 	void calculateIfProlongedNote(std::vector<float>, std::vector<float>);
 	void updateSamples(int number, std::vector<float>* samples);
