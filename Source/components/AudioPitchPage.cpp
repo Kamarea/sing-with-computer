@@ -137,7 +137,7 @@ void AudioPitchPage::updateSamples(int number, std::vector<float>* samples)
 				for (int i = 0; i < 1024; i++)
 					tempSamples[i] = allSamples[numberOfSamplesRecalculated - 512 + i];
 				tempPitch = computePitch(tempSamples) / 1.32f;
-				pitch=std::max<float>(0.0,69+12*(log10(tempPitch/440)/LOG_10_2));
+				pitch=std::max<float>(0.0,69+12*(log10(tempPitch/440)/log_10_2));
 
 				lock.enter();
 				tempSize = pitches.size();

@@ -43,6 +43,10 @@ public:
           currentDemoId (0)
     {
         setOpaque (true);
+		userChoice = new UserChoice();
+		addAndMakeVisible(userChoice);
+		userChoice->setBounds(0,0,500,200);
+		DialogWindow::showModalDialog(L"Choose user", userChoice, this, Colours::white, false);
         //invokeDirectly (showAudioReader, true);
     }
 
@@ -52,7 +56,7 @@ public:
        // openGLContext.detach();
        //#endif
 
-		//deleteAndZero(textField);
+		deleteAndZero(userChoice);
     }
 
     void paint (Graphics& g)
@@ -210,6 +214,7 @@ private:
     ScopedPointer<Component> currentComp;
     int currentDemoId;
 	TextButton* testButton;
+	UserChoice* userChoice;
 
 	//==============================================================================
     StringArray getRenderingEngines()

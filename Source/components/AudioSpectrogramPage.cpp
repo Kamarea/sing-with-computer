@@ -63,8 +63,9 @@ void AudioSpectrogramPage::paint (Graphics& g)
 
 		if(allSpectroSamples[size-shiftNumber+i].size() != 1024)
 			return;
-		for (int j=0;j<1024;j++)
-			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+(float)allSpectroSamples[size-(shiftNumber-i)][j]/100,1,1,1));
+		for (int j=0;j<1024;j++)//100
+			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+
+					(float)allSpectroSamples[size-(shiftNumber-i)][j],1,1,1));
 		lock.exit();
 	}
 	
@@ -81,6 +82,11 @@ void AudioSpectrogramPage::timerCallback()
 
 void AudioSpectrogramPage::updateSamples(int number, std::vector<float>* samples)
 {
+	std::vector<float> basicSamples;
+	std::vector<float> preemphasisSamples;
+	basicSamples.resize(1024);
+	preemphasisSamples.resize(1024);
+
 	if(numberOfSamplesRead < number)
 	{
 		for (int i = numberOfSamplesRead; i < number; i++)
@@ -95,10 +101,16 @@ void AudioSpectrogramPage::updateSamples(int number, std::vector<float>* samples
 		{
 			while(number - numberOfSamplesRecalculated >= 1024)
 			{
+				for (int i = 0; i < 1024; i++)
+					basicSamples[i] = allSamples[numberOfSamplesRecalculated - 512 + i];
+				preemphasisSamples[0] = basicSamples[0];
+				for (int i = 1; i < 1024; i++)
+					preemphasisSamples[i] = basicSamples[i] - phi * basicSamples[i - 1];
+
 				for (int i = 0; i < 2048; i++)
 					transformSamples[i] = 0.0;
 				for (int i = 0; i < 1024; i++)
-					transformSamples[2 * i] = allSamples[numberOfSamplesRecalculated - 512 + i];
+					transformSamples[2 * i] = preemphasisSamples[i];
 				
 				fft1024(transformSamples);
 

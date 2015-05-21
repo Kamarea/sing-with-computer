@@ -12,6 +12,7 @@
 #define __MAINWINDOW_H_3DF5D75A__
 
 //#include "../JuceLibraryCode/JuceHeader.h"
+#include "UserChoice.h"
 
 
 //==============================================================================

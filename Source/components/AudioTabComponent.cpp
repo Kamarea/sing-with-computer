@@ -45,7 +45,8 @@ public:
 			actualTime.getDayOfMonth() << "_" << actualTime.getHours() << "-" <<
 			actualTime.getMinutes();
 		std::string folderName = sstream.str();
-		File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
+		File directory = File(File::getSpecialLocation(File::currentExecutableFile).
+			getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
 		directory.createDirectory();
 		
 		m_component->recorder = new AudioRecorder();
@@ -145,7 +146,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 				freq /= (-1) * 2 * score[i].notes[k].octave;
 			lastPitch = score[i].notes[k].pitch;
 			lastOctave = score[i].notes[k].octave;
-			pitchMIDI = std::max<float>(0.0, 69+12*(log10(freq / 440)/LOG_10_2));
+			pitchMIDI = std::max<float>(0.0, 69+12*(log10(freq / 440)/log_10_2));
 			for (int l = 0; l < length; l++)
 			{
 				scorePitches.add(score[i].notes[k]);
@@ -170,7 +171,7 @@ void AudioTabComponent::init(TabbedComponent* tabbedComponent, bool isScore)
 	m_ampliPage =  AudioAmplitudePage::getInstance();
 	m_spectroPage =  AudioSpectrogramPage::getInstance();
 	m_pitchPage =  AudioPitchPage::getInstance();
-    tabbedComponent->addTab (L"Amplituda", Colours::lightgrey, m_ampliPage, true);
+    tabbedComponent->addTab (L"Oscylogram", Colours::lightgrey, m_ampliPage, true);
     tabbedComponent->addTab (L"Spektrogram", Colours::lightgrey, m_spectroPage, true);
     tabbedComponent->addTab (L"Wysokoœæ", Colours::lightgrey, m_pitchPage, true);
     tabbedComponent->setCurrentTabIndex (0);

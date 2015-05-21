@@ -4,8 +4,6 @@
 
 #include "../component_headers.h"
 
-#define LOG_10_2 0.30102999566398119521373889472449
-
 const String pitchNames[] = {"1A","1AIS","1B",
 				"C","CIS","D","DIS","E","F","FIS","G","GIS","A","AIS","B",
 				"c","cis","d","dis","e","f","fis","g","gis","a","ais","b",

@@ -28,6 +28,7 @@
 
 // include the JUCE headers..
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "components/Globals.h"
 
 // Pre-declare the functions that create each of the demo components..
 Component* createAudioDemo();

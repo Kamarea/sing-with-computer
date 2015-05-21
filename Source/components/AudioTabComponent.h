@@ -28,6 +28,7 @@
 #include "AudioSpectrogramPage.h"
 #include "AudioPitchPage.h"
 #include "SoundInput.h"
+#include "ScoreImage.h"
 //#include "ScoreParts.h"
 
 
