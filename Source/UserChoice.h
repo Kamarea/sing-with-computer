@@ -10,8 +10,8 @@ public:
 	~UserChoice();
 
 private:
-	Button* chooseUserButton;
-	Button* addUserButton;
+	TextButton* chooseUserButton;
+	TextButton* addUserButton;
 	ComboBox* usersListBox;
 	TextEditor* newUserField;
 	Label* chooseUserLabel;
