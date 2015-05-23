@@ -25,10 +25,19 @@ public:
 	~Globals();
 
 	String getUser();
+	void setUser(String);
+	void resaveFile();
+
+	float getMeanNoise();
+	std::vector<float> getSpectroNoise();
+	void setMeanNoise(float);
+	void setSpectroNoise(std::vector<float>);
 
 private:
 	static Globals* instance;
 	String currentUser;
+	float meanNoise;
+	std::vector<float> spectroNoise;
 
 	std::vector<std::pair<String, String>> settings;
 

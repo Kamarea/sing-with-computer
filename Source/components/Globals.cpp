@@ -22,6 +22,20 @@ Globals::Globals()
 	}
 }
 
+void Globals::resaveFile()
+{
+	File settingsFile = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (settingsFileName));
+	String wholeSettings = L"";
+	for (int i = 0; i < settings.size(); i++)
+	{
+		wholeSettings.append(settings[i].first,settings[i].first.length());
+		wholeSettings.append(" : ", 3);
+		wholeSettings.append(settings[i].second,settings[i].second.length());
+		wholeSettings.append("\n", 1);
+	}
+	settingsFile.replaceWithText(wholeSettings);
+}
+
 void Globals::parseLine(String line)
 {
 	int nameEnd = line.indexOf(0, " : ");
@@ -39,4 +53,35 @@ void Globals::parseLine(String line)
 String Globals::getUser()
 {
 	return currentUser;
+}
+
+void Globals::setUser(String user_)
+{
+	currentUser = user_;
+	for (int i = 0; i < settings.size(); i++)
+	{
+		if (settings[i].first == "user")
+			settings[i].second = currentUser;
+	}
+}
+
+float Globals::getMeanNoise()
+{
+	return meanNoise;
+}
+
+std::vector<float> Globals:: getSpectroNoise()
+{
+	return spectroNoise;
+}
+
+void Globals::setMeanNoise(float noise)
+{
+	meanNoise = noise;
+}
+
+void Globals::setSpectroNoise(std::vector<float> noise)
+{
+	for (int i = 0; i < 1024; i++)
+		spectroNoise[i] = noise[i];
 }

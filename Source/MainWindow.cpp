@@ -279,6 +279,7 @@ MainAppWindow::MainAppWindow()
 MainAppWindow::~MainAppWindow()
 {
 	setMenuBar (nullptr);
+	Globals::getInstance()->resaveFile();
     clearContentComponent();
 }
 

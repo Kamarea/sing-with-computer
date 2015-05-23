@@ -41,7 +41,7 @@ public:
 		Time actualTime=Time::getCurrentTime();
 
 		std::ostringstream sstream;
-		sstream << "data\\" << actualTime.getYear() << "-" << actualTime.getMonth()+1 << "-" <<
+		sstream << "data\\" << Globals::getInstance()->getUser() << "\\" << actualTime.getYear() << "-" << actualTime.getMonth()+1 << "-" <<
 			actualTime.getDayOfMonth() << "_" << actualTime.getHours() << "-" <<
 			actualTime.getMinutes();
 		std::string folderName = sstream.str();
@@ -57,7 +57,6 @@ public:
 		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitchesMIDI));
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
-		//m_component->startTimer (120);
 	};
 	AudioTabComponent* m_component;
 };
