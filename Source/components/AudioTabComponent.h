@@ -82,6 +82,7 @@ public:
 	AudioAmplitudePage* m_ampliPage;
 	AudioPitchPage* m_pitchPage;
 	SoundInput* m_soundInput;
+	ScoreImage* scoreImage;
 	Array<ScorePart> score;
 	Array<float> scorePitchesFreq;
 	std::vector<float> scorePitchesMIDI;

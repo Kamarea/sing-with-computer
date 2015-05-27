@@ -107,6 +107,9 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
+	scoreImage = new ScoreImage(score);
+	addAndMakeVisible(scoreImage);
+
 	AudioDeviceManager::AudioDeviceSetup setup;
 	deviceManager.getAudioDeviceSetup(setup);
 	int sampleRate = (setup.sampleRate * 60) / 512 / 2.1;
@@ -222,7 +225,8 @@ AudioTabComponent::~AudioTabComponent()
 	deleteAndZero (playButton);
 	deleteAndZero (stopButton);
 	deleteAndZero (m_soundInput);
-	if (score.size() > 0)
+	deleteAndZero (scoreImage);
+	if (hasScore)
 		deleteAndZero (scoreTable);
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -269,6 +273,7 @@ void AudioTabComponent::resized()
 	{
 		tabbedComponent->setBounds (0, getHeight() / 2 , getWidth(), getHeight() / 2);
 		scoreTable->setBounds (getWidth() - 200,50,200,getHeight()/ 2 - 30);//getWidth() - 200, 100, 200, getHeight() / 2 - 50);
+		scoreImage->setBounds(0,0,getWidth() - 200, getHeight() / 2);
 	}
 	else
 	{

@@ -11,6 +11,13 @@ const float log_10_2=0.30102999566398119521373889472449;
 
 const float phi=0.95;
 
+const float spectrumResolution = 44100.0 / 1024.0;
+
+enum lang {
+	pl = 0,
+	eng = 1
+};
+
 class Globals
 {
 public:
@@ -32,16 +39,23 @@ public:
 	std::vector<float> getSpectroNoise();
 	void setMeanNoise(float);
 	void setSpectroNoise(std::vector<float>);
+	std::vector<String> getTexts();
 
 private:
 	static Globals* instance;
 	String currentUser;
 	float meanNoise;
 	std::vector<float> spectroNoise;
+	enum lang currentLang;
+
+
+	std::vector<std::vector<String>> languagePack;
 
 	std::vector<std::pair<String, String>> settings;
 
 	void parseLine(String line);
+	void parseSpectroNoise(String);
+	void loadLanguagePack();
 
 	Globals();
     Globals (const Globals&);

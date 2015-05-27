@@ -3,21 +3,14 @@
 //#include "logs.h"
 
 AudioPitchPage* AudioPitchPage::instance;
-/*	
-static Array<float> getPitches(LiveAudioPitchDisplayComp* loader)
-{
-	return loader->pitches;
-}
-*/
+
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 AudioPitchPage::AudioPitchPage()
 {
-    //nextSample = subSample = 0;
     accumulator = 0;
 	numberOfSamplesRead = 0;
 	numberOfSamplesRecalculated = 512;
 	recordedScoreNumber = 0;
-    //zeromem (samples, sizeof (samples));
     setOpaque (true);
 	test=0;
 	frequency=-2;
@@ -41,7 +34,6 @@ void AudioPitchPage::paint (Graphics& g)
     g.fillAll (Colours::white);
 
     const float midY = getHeight() * 0.5f;
-    //int sampleNum = (nextSample + numElementsInArray (samples) - 1);
 	float oneHzSize = (float)getHeight() / 1800.0f;
 		
 	float semitone = (float)getHeight()/pitchCount;
@@ -87,11 +79,6 @@ void AudioPitchPage::paint (Graphics& g)
 				g.drawVerticalLine (getWidth() - 20  - recordedSize + x, y, y+1);
 			}
 		}
-
-		/*if ( *pitchPosition >= scorePitches.size() - 3 &&
-			 *pitchPosition <= scorePitches.size() + 3)
-			recordedScoreNumber = samplesNumber - begin;
-			*/
 	}
 	// draw recorded pitches
 	g.setColour(Colours::blue);
@@ -100,14 +87,11 @@ void AudioPitchPage::paint (Graphics& g)
     {
         int y=(float)getHeight() - 
 			(pitches[pitches.size() - drawNumber + x] - 33) * semitone;
-		// getWidth() - 20 -drawNumber + x
         g.drawVerticalLine (getWidth() - 20 -drawNumber + x, y, y+1);
     }
 	lock.exit();
 	
-	g.drawFittedText(String(numberOfSamplesRead),getWidth()/2,100,100,100,Justification::left,1);
-	//g.drawFittedText(String(restsPercentage),getWidth()/2,100,100,100,Justification::left,1);
-	//g.drawFittedText(String(pitchPercentage),getWidth()/2,150,100,100,Justification::left,1);
+	//g.drawFittedText(String(numberOfSamplesRead),getWidth()/2,100,100,100,Justification::left,1);
 }
 
 void AudioPitchPage::timerCallback()
@@ -161,7 +145,7 @@ void AudioPitchPage::updateSamples(int number, std::vector<float>* samples)
 float AudioPitchPage::computePitch(float *my_samples){
 	float freq=0.0f;				// freq to return
 	int lev=6;						// levels of analysis
-	float globalMaxTreshold=0.55f;	// threshold of maximum values to consider
+	float globalMaxTreshold=0.4f;	// threshold of maximum values to consider
 	int maxFreq = 3000;				// minimum distance to consider valid
 	int diffLevs = 3;				// number of diferences to go through
 	int fs=44100;					// sample rate

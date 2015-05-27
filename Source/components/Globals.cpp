@@ -20,6 +20,9 @@ Globals::Globals()
 		endOfLine = data.indexOf(begOfLine+1,"\n");
 		line = data.substring(begOfLine+1,endOfLine-1).trimStart();
 	}
+
+	spectroNoise.resize(1024);
+	loadLanguagePack();
 }
 
 void Globals::resaveFile()
@@ -47,6 +50,37 @@ void Globals::parseLine(String line)
 	if (pair.first == "user")
 	{
 		currentUser = pair.second;
+	}
+	
+	if (pair.first == "lang")
+	{
+		if (pair.second == "pl")
+			currentLang = pl;
+		if (pair.second == "eng")
+			currentLang = eng;
+	}
+	
+	if (pair.first == "meanNoise")
+	{
+		meanNoise = pair.second.getFloatValue();
+	}
+
+	if (pair.first == "spectroNoise")
+	{
+		parseSpectroNoise(pair.second);
+	}
+}
+
+void Globals::parseSpectroNoise(String line)
+{
+	spectroNoise.resize(1024);
+	int begin = 0;
+	int end = line.indexOf(begin+1,",");
+	for (int i = 0; i < 1024; i++)
+	{
+		spectroNoise[i] = line.substring(begin,end).getFloatValue();
+		begin = end+1;
+		end = line.indexOf(begin+1,",");
 	}
 }
 
@@ -78,10 +112,71 @@ std::vector<float> Globals:: getSpectroNoise()
 void Globals::setMeanNoise(float noise)
 {
 	meanNoise = noise;
+	for (int i = 0; i < settings.size(); i++)
+	{
+		if (settings[i].first == "meanNoise")
+			settings[i].second = String(meanNoise);
+	}
 }
 
 void Globals::setSpectroNoise(std::vector<float> noise)
 {
 	for (int i = 0; i < 1024; i++)
 		spectroNoise[i] = noise[i];
+	String line = String();
+	for (int i = 0; i < 1024; i++)
+	{
+		line.append(String(spectroNoise[i]),100);
+		line.append(",",1);
+	}
+	line.append("\n",1);
+	
+	for (int i = 0; i < settings.size(); i++)
+	{
+		if (settings[i].first == "spectroNoise")
+			settings[i].second = line;
+	}
+}
+
+std::vector<String> Globals::getTexts()
+{
+	return languagePack[currentLang];
+}
+
+void Globals::loadLanguagePack()
+{
+	std::vector<String> plTexts;
+	languagePack.push_back( plTexts);
+	
+	std::vector<String> engTexts;
+	languagePack.push_back( engTexts);
+
+	languagePack[0].push_back(L"Magisterka!");// 0
+	languagePack[1].push_back(L"Sing with computer");
+	languagePack[0].push_back(L"Wybierz u¿ytkownika");// 1
+	languagePack[1].push_back(L"Choose a user");
+	languagePack[0].push_back(L"Wybierz u¿ytkownika:");// 2
+	languagePack[1].push_back(L"Choose a user");
+	languagePack[0].push_back(L"Wybierz");// 3
+	languagePack[1].push_back(L"Choose");
+	languagePack[0].push_back(L"lub dodaj nowego:");// 4
+	languagePack[1].push_back(L"or adda new one:");
+	languagePack[0].push_back(L"Dodaj");// 5
+	languagePack[1].push_back(L"Add");
+	languagePack[0].push_back(L"U¿ytkownik ju¿ istnieje!");//6
+	languagePack[1].push_back(L"User already exists!");
+	languagePack[0].push_back(L"Glowne");//7
+	languagePack[1].push_back(L"Main");
+	languagePack[0].push_back(L"Dodatki");//8
+	languagePack[1].push_back(L"Addons");
+	languagePack[0].push_back(L"Za³aduj plik");//9
+	languagePack[1].push_back(L"Load file");
+	languagePack[0].push_back(L"Œpiewaj");//10
+	languagePack[1].push_back(L"Sing");
+	languagePack[0].push_back(L"Koniec");//11
+	languagePack[1].push_back(L"Quit");
+	languagePack[0].push_back(L"Za³aduj nagranie");//12
+	languagePack[1].push_back(L"Load audio file");
+	languagePack[0].push_back(L"Pomiar szumu");//13
+	languagePack[1].push_back(L"Noise measurement");
 }

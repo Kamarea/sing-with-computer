@@ -59,6 +59,7 @@ private:
 	std::vector<float> amplitudes;
     float accumulator;
 	CriticalSection lock;
+	float meanNoise;
 	
 	int numberOfSamplesRead;
 	int numberOfSamplesRecalculated;

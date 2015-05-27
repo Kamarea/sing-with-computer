@@ -14,4 +14,7 @@ public:
 private:
 	Image scoreImage;
 	Array<ScorePart> scoreParts;
+	int actualPoint;
+
+	void drawMetrum(Graphics*);
 };

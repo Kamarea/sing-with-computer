@@ -47,6 +47,10 @@ private:
 	int begin, end;
 	CriticalSection lock;
 	bool isRecording;
+	std::vector<float> spectroNoise;
+	std::vector<int> pitchFreq;
+
+	void calculatePitch(std::vector<float>);
 
     AudioSpectrogramPage (const AudioSpectrogramPage&);
     AudioSpectrogramPage& operator= (const AudioSpectrogramPage&);

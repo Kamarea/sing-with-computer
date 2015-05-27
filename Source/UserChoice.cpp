@@ -9,7 +9,7 @@ public:
 	}
 	void buttonClicked(Button* button)
 	{
-		if (button->getButtonText() == L"Choose")
+		if (button->getButtonText() == Globals::getInstance()->getTexts()[3])
 		{
 			// choose button clicked
 			String currUser = component_->userNames[component_->usersListBox->getSelectedId() - 1];
@@ -17,7 +17,7 @@ public:
 			if (DialogWindow* dw = component_->findParentComponentOfClass<DialogWindow>())
 				dw->exitModalState(1234);
 		}
-		else if (button->getButtonText() == L"Add")
+		else if (button->getButtonText() == Globals::getInstance()->getTexts()[5])
 		{
 			// add button clicked
 			String user = component_->newUserField->getText();
@@ -33,8 +33,7 @@ public:
 			{
 				OkWind* okWind = new OkWind();
 				component_->addAndMakeVisible(okWind);
-				okWind->setBounds(0,0,170,100);
-				DialogWindow::showModalDialog(L"User exists", okWind, component_, Colours::white, true);
+				DialogWindow::showModalDialog(Globals::getInstance()->getTexts()[6], okWind, component_, Colours::white, true);
 				deleteAndZero(okWind);
 			}
 			else
@@ -70,15 +69,16 @@ public:
 
 OkWind::OkWind()
 {
-	label = new Label(String::empty, L"User already exists!");
+	label = new Label(String::empty, Globals::getInstance()->getTexts()[6]);
 	button = new TextButton();
 	button->setButtonText("OK");
 	OkButtonListener* list = new OkButtonListener(this);
 	button->addListener(list);
 	addAndMakeVisible(label);
 	addAndMakeVisible(button);
-	label->setBounds(20,20,150,20);
-	button->setBounds(60,60,50,20);
+	setBounds(0,0,300,100);
+	label->setBounds((getWidth() - 150) / 2,20,150,20);
+	button->setBounds((getWidth() - 50) / 2,60,50,20);
 }
 
 OkWind::~OkWind()
@@ -91,7 +91,7 @@ UserChoice::UserChoice()
 	:	thread ("reading data from files"),
 		usersList(0, thread)
 {
-	chooseUserLabel = new Label(String::empty, L"Choose user:");
+	chooseUserLabel = new Label(String::empty, Globals::getInstance()->getTexts()[2]);
 	addAndMakeVisible(chooseUserLabel);
 
 	File directory = File(File::getSpecialLocation(File::currentExecutableFile).
@@ -110,6 +110,7 @@ UserChoice::UserChoice()
 		if (info.isDirectory)
 			userNames.push_back(info.filename);
 	}
+	setBounds(0,0,500,200);
 
 	usersListBox = new ComboBox();
 	usersListBox->setEditableText(false);
@@ -128,27 +129,27 @@ UserChoice::UserChoice()
 	UserButtonListener* listener = new UserButtonListener(this);
 
 	chooseUserButton = new TextButton();
-	chooseUserButton->setButtonText("Choose");
+	chooseUserButton->setButtonText(Globals::getInstance()->getTexts()[3]);
 	chooseUserButton->addListener(listener);
 	addAndMakeVisible(chooseUserButton);
 
-	addUserLabel = new Label(String::empty, L"or add a new user:");
+	addUserLabel = new Label(String::empty, Globals::getInstance()->getTexts()[4]);
 	addAndMakeVisible(addUserLabel);
 
 	newUserField = new TextEditor();
 	addAndMakeVisible(newUserField);
 
 	addUserButton = new TextButton();
-	addUserButton->setButtonText("Add");
+	addUserButton->setButtonText(Globals::getInstance()->getTexts()[5]);
 	addUserButton->addListener(listener);
 	addAndMakeVisible(addUserButton);
 
-	chooseUserLabel->setBounds(220,20,100,20);
-	usersListBox->setBounds(180,60,100,20);
-	chooseUserButton->setBounds(300, 60, 50, 20);
-	addUserLabel->setBounds(200,100,150,20);
-	newUserField->setBounds(180,140,100,20);
-	addUserButton->setBounds(300, 140, 50, 20);
+	chooseUserLabel->setBounds((getWidth() - 150) / 2,20,150,20);
+	usersListBox->setBounds((getWidth() - 230) / 2,60,150,20);
+	chooseUserButton->setBounds(getWidth() - (getWidth() - 230) / 2 - 70, 60, 70, 20);
+	addUserLabel->setBounds((getWidth() - 150) / 2,100,150,20);
+	newUserField->setBounds((getWidth() - 220) / 2,140,140,20);
+	addUserButton->setBounds(getWidth() - (getWidth() - 220) / 2 - 70, 140, 70, 20);
 }
 
 UserChoice::~UserChoice()

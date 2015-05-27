@@ -18,6 +18,7 @@ Component* chooseAndLoadFileComponent();
 ChooseAndLoadFile* chooseAndLoadFile();
 Component* createAudioReader();
 Component* createAudio(Array<ScorePart> score);
+Component* createNoiseMeasurement();
 
 /*TextEditor* textField;
 
@@ -45,8 +46,8 @@ public:
         setOpaque (true);
 		userChoice = new UserChoice();
 		addAndMakeVisible(userChoice);
-		userChoice->setBounds(0,0,500,200);
-		DialogWindow::showModalDialog(L"Choose user", userChoice, this, Colours::white, false);
+		//userChoice->setBounds(0,0,500,200);
+		DialogWindow::showModalDialog(Globals::getInstance()->getTexts()[1], userChoice, this, Colours::white, false);
         //invokeDirectly (showAudioReader, true);
     }
 
@@ -85,7 +86,10 @@ public:
     //==============================================================================
     StringArray getMenuBarNames()
     {
-        const char* const names[] = { "Demo", nullptr };
+        const char* const names[] = { 
+			Globals::getInstance()->getTexts()[7].getCharPointer(), 
+			Globals::getInstance()->getTexts()[8].getCharPointer(), 
+			nullptr };
 
         return StringArray (names);
     }
@@ -100,11 +104,15 @@ public:
         {            
 			menu.addCommandItem(commandManager, loadFile);
             menu.addCommandItem (commandManager, showAudio);
-            menu.addCommandItem (commandManager, showAudioReader);
 
             menu.addSeparator();
-            menu.addCommandItem (commandManager, StandardApplicationCommandIDs::quit);
+            menu.addCommandItem (commandManager, quit);
         }
+		else if (menuIndex == 1)
+		{
+			menu.addCommandItem(commandManager, getNoise);
+            menu.addCommandItem (commandManager, showAudioReader);
+		}
 
         return menu;
     }
@@ -134,7 +142,12 @@ public:
 	 void getAllCommands (Array <CommandID>& commands)
     {
         // this returns the set of all commands that this target can perform..
-        const CommandID ids[] = { showAudio,loadFile,showAudioReader
+        const CommandID ids[] = { 
+			loadFile, 
+			showAudio,  
+			quit,
+			getNoise,
+			showAudioReader
         };
 
         commands.addArray (ids, numElementsInArray (ids));
@@ -150,19 +163,29 @@ public:
         switch (commandID)
         {
         case showAudio:
-            result.setInfo ("Audio", "Shows the audio demo", demosCategory, 0);
+            result.setInfo (Globals::getInstance()->getTexts()[10], "Shows the audio demo", demosCategory, 0);
             result.setTicked (currentDemoId == showAudio);
-            result.addDefaultKeypress ('1', ModifierKeys::commandModifier);
+            result.addDefaultKeypress ('a', ModifierKeys::commandModifier);
             break;
 		case loadFile:
-			result.setInfo("Load file", "Loads music file", demosCategory, 0);
+			result.setInfo(Globals::getInstance()->getTexts()[9], "Loads music file", demosCategory, 0);
             result.setTicked (currentDemoId == loadFile);
-            result.addDefaultKeypress ('2', ModifierKeys::commandModifier);
+            result.addDefaultKeypress ('l', ModifierKeys::commandModifier);
 			break;
 		case showAudioReader:
-			result.setInfo("AudioReader", "Plays recorded pieces", demosCategory, 0);
+			result.setInfo(Globals::getInstance()->getTexts()[12], "Plays recorded pieces", demosCategory, 0);
             result.setTicked (currentDemoId == showAudioReader);
-            result.addDefaultKeypress ('3', ModifierKeys::commandModifier);
+            result.addDefaultKeypress ('r', ModifierKeys::commandModifier);
+			break;
+		case quit:
+			result.setInfo(Globals::getInstance()->getTexts()[11], "Quit", demosCategory, 0);
+            result.setTicked (currentDemoId == quit);
+            result.addDefaultKeypress ('Q', ModifierKeys::commandModifier);
+			break;
+		case getNoise:
+			result.setInfo(Globals::getInstance()->getTexts()[13], "Quit", demosCategory, 0);
+            result.setTicked (currentDemoId == getNoise);
+            result.addDefaultKeypress ('n', ModifierKeys::commandModifier);
 			break;
 
         default:
@@ -180,9 +203,6 @@ public:
 			if (currentDemoId == loadFile)
 			{
 				Component* currentComp = findChildWithID("chooseAndLoadFileID");
-				//Array<ScorePart> score = ((ChooseAndLoadFile*)currentComp)->parts;
-				//Component* temp = createAudio(score);
-				//showDemo (temp);
 				showDemo (createAudio(((ChooseAndLoadFile*)currentComp)->parts));
 			}
 			else
@@ -198,6 +218,15 @@ public:
         case showAudioReader:
 			showDemo(createAudioReader());
 		    currentDemoId = showAudioReader;
+			break;
+
+        case getNoise:
+			showDemo(createNoiseMeasurement());
+		    currentDemoId = getNoise;
+			break;
+
+        case quit:
+			mainWindow.userTriedToCloseWindow();
 			break;
 
         default:
@@ -231,9 +260,11 @@ private:
 	//==============================================================================
     enum CommandIDs
     {
-		showAudio                  = 0x2005,
-		loadFile				   = 0x2006,
-		showAudioReader			   = 0x2007
+		showAudio					= 0x2005,
+		loadFile					= 0x2006,
+		showAudioReader				= 0x2007,
+		quit						= 0x2008,
+		getNoise					= 0x2009
     };
 
 
@@ -241,7 +272,7 @@ private:
 
 //==============================================================================
 MainAppWindow::MainAppWindow()
-    : DocumentWindow ("Magisterka!",//JUCEApplication::getInstance()->getApplicationName(),
+    : DocumentWindow (Globals::getInstance()->getTexts()[0],//JUCEApplication::getInstance()->getApplicationName(),
                       Colours::azure,
                       DocumentWindow::allButtons,true)
 {

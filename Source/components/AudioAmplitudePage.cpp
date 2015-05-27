@@ -101,6 +101,8 @@ AudioAmplitudePage::AudioAmplitudePage()
 	
 	numberOfSamplesRead = 0;
 	numberOfSamplesRecalculated = 0;
+
+	meanNoise = Globals::getInstance()->getMeanNoise();
 	
 	startTimer (1000 / 50); // use a timer to keep repainting this component
 }
@@ -132,7 +134,7 @@ void AudioAmplitudePage::paint (Graphics& g)
         g.drawVerticalLine (getWidth() - drawNumber + x, midY - y, midY + y);
     }
 	lock.exit();
-	//g.drawHorizontalLine(midY, 0, getWidth());
+	g.drawHorizontalLine(midY, 0, getWidth());
 }
 
 void AudioAmplitudePage::timerCallback()
@@ -167,6 +169,9 @@ void AudioAmplitudePage::updateSamples(int number, std::vector<float>* samples)
 				{
 					lock.enter();
 					amplitudes.push_back(accumulator / rate);
+					// noise removal
+					amplitudes[amplitudes.size() - 1] = std::max<float>(0.0, 
+						amplitudes[amplitudes.size() - 1]  - meanNoise);
 					lock.exit();
 					accumulator = 0;
 					count = 0;
