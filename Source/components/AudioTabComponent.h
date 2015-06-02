@@ -92,6 +92,7 @@ public:
 	bool isRecording;
 	ScopedPointer<AudioRecorder> recorder;
     AudioDeviceManager deviceManager;
+	bool hasScore;
 	
 	ImageButton* playButton;
 	ImageButton* stopButton;
@@ -108,7 +109,6 @@ private:
 
     //==============================================================================
     TabbedComponent* tabbedComponent;
-	bool hasScore;
 	
 	void init(TabbedComponent* tabbedComponent, bool isScore);
 

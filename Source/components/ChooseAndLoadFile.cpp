@@ -38,6 +38,24 @@ ChooseAndLoadFile::ChooseAndLoadFile ()
     setSize (1, 1);
     setOpaque (true);
 	
+	desc1 = new Label();
+	fileChosen = new Label();
+	desc2 = new Label();
+	title = new Label();
+	desc3 = new Label();
+	composer = new Label();
+	desc4 = new Label();
+	measureNumber = new Label();
+	
+	addAndMakeVisible(desc1);
+	addAndMakeVisible(fileChosen);
+	addAndMakeVisible(desc2);
+	addAndMakeVisible(title);
+	addAndMakeVisible(desc3);
+	addAndMakeVisible(composer);
+	addAndMakeVisible(desc4);
+	addAndMakeVisible(measureNumber);
+	
 	fileChooser = new FileChooser("Choose file...",File::nonexistent,"*.ly");
 	if(!fileChooser->browseForFileToOpen())
 		return;
@@ -46,6 +64,33 @@ ChooseAndLoadFile::ChooseAndLoadFile ()
 	data = openFile.loadFileAsString();
 	int position=0;
 	readScore(position);
+	
+	desc1->setText(Globals::getInstance()->getTexts()[14], true);
+	desc2->setText(Globals::getInstance()->getTexts()[15], true);
+	desc3->setText(Globals::getInstance()->getTexts()[16], true);
+	desc4->setText(Globals::getInstance()->getTexts()[17], true);
+	fileChosen->setText(openFile.getFileName(), true);
+	title->setText(Globals::getInstance()->title, true);
+	composer->setText(Globals::getInstance()->composer, true);
+	measureNumber->setText(String(actualMeasure), true);
+
+	desc1->setFont(Font(50));
+	desc1->setBounds(20,30,500,50);
+	desc2->setFont(Font(50));
+	desc2->setBounds(20,100,500,50);
+	desc3->setFont(Font(50));
+	desc3->setBounds(20,170,500,50);
+	desc4->setFont(Font(50));
+	desc4->setBounds(20,240,500,50);
+	fileChosen->setFont(Font(50));
+	fileChosen->setBounds(550, 30, 300, 50);
+	title->setFont(Font(50));
+	title->setBounds(550, 100, 300, 50);
+	composer->setFont(Font(50));
+	composer->setBounds(550, 170, 300, 50);
+	measureNumber->setFont(Font(50));
+	measureNumber->setBounds(550, 240, 300, 50);
+	repaint();
 
     //[Constructor] You can add your own custom stuff here..
     //[/Constructor]
@@ -56,7 +101,14 @@ ChooseAndLoadFile::~ChooseAndLoadFile()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-	
+	deleteAndZero(desc1);
+	deleteAndZero(desc2);
+	deleteAndZero(desc3);
+	deleteAndZero(desc4);
+	deleteAndZero(fileChosen);
+	deleteAndZero(title);
+	deleteAndZero(composer);
+	deleteAndZero(measureNumber);
 	deleteAndZero(fileChooser);
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -65,16 +117,55 @@ ChooseAndLoadFile::~ChooseAndLoadFile()
 
 //==============================================================================
 
+void ChooseAndLoadFile::paint (Graphics& g)
+{
+    //[UserPrePaint] Add your own custom painting code here..
+    //[/UserPrePaint]
+
+    g.fillAll (Colours::white);
+
+    //[UserPaint] Add your own custom painting code here..
+    //[/UserPaint]
+}
+
+void ChooseAndLoadFile::resized()
+{
+    //[UserResized] Add your own custom resize handling here..
+	
+/*	desc1->setFont(Font(50));
+	desc1->setBounds(0,30,200,50);
+	desc2->setFont(Font(50));
+	desc2->setBounds(0,100,200,50);
+	desc3->setFont(Font(50));
+	desc3->setBounds(0,170,200,50);
+	desc4->setFont(Font(50));
+	desc4->setBounds(0,240,200,50);
+	fileChosen->setFont(Font(50));
+	fileChosen->setBounds(250, 30, 300, 50);*/
+    //[/UserResized]
+}
+
 void ChooseAndLoadFile::readScore(int position)
 {
-	int score = data.indexOf(position,"\\score");
+	//title -> " -> " -> to co poœrodku
+	//composer -> " -> " -> to co poœrodku
+	int beg = data.indexOf(position, "title");
+	beg = data.indexOf(beg, "\"");
+	int end = data.indexOf(beg + 1, "\"");
+	String title = data.substring(beg + 1, end);
+
+	beg = data.indexOf(end, "composer");
+	beg = data.indexOf(beg, "\"");
+	end = data.indexOf(beg + 1, "\"");
+	String composer = data.substring(beg + 1, end);
+	Globals::getInstance()->title = title;
+	Globals::getInstance()->composer = composer;
+
+	int score = data.indexOf(end, "\\score");
 	if(score>data.length())
 		return;
-	//String tmp = String(score);
-	
-	FILE* aaa = fopen("aaa.txt","w");
 
-	score = data.indexOf(score,"\\relative");
+	score = data.indexOf(score, "\\relative");
 	mainOctave = 0;
 	String relativeCount = data.substring(score,data.indexOf(score+1,"{"));
 	relativeCount = relativeCount.substring(9);
@@ -99,7 +190,6 @@ void ChooseAndLoadFile::readScore(int position)
 	note.pitch = c;
 	note.octave = mainOctave;
 	
-	fprintf(aaa,"%s\n",relativeCount);
 	ScorePart part;
 	part.measureNumber = 0;
 	part.clef = noClef;
@@ -112,45 +202,39 @@ void ChooseAndLoadFile::readScore(int position)
 	part.notes.add(note);
 	parts.add(part);
 	actualMeasure = 0;
+	actualMeasureCount = 0.0;
 	
 	int begOfLine = data.indexOf(score+1,"\n");
 	int endOfLine = data.indexOf(begOfLine+1,"\n");
 	String line = data.substring(begOfLine+1,endOfLine-1).trimStart();
-	fprintf(aaa,"%s\n",line);
 	while(!line.isEmpty())
 	{
-		parseLine(line,aaa);
+		parseLine(line);
 		begOfLine = endOfLine;
 		endOfLine = data.indexOf(begOfLine+1,"\n");
 		line = data.substring(begOfLine+1,endOfLine-1).trimStart();
-		fprintf(aaa,"%s\n",line);
 	}
 	
-	fclose(aaa);
 }
 
-void ChooseAndLoadFile::parseLine(String line, FILE* aaa)
+void ChooseAndLoadFile::parseLine(String line)
 {
-	fprintf(aaa,"line: %s\n",line);
 	// clef change notification
 	if(line.substring(0,6)=="\\clef ")
 	{
-		fprintf(aaa,"clef\n");
 		if(parts.getLast().clef!=noClef)
 		{
 			//create new part
 			ScorePart newPart = ScorePart();
 			newPart.measureNumber = actualMeasure;
 			parts.add(newPart);
-			fprintf(aaa,"newPart clef\n");
 		}
 		String clefSign = line.substring(6);
-		parseClef(clefSign,aaa);
+		parseClef(clefSign);
 	}
 	// timing change notification
 	else if(line.substring(0,6)=="\\time ")
 	{
-		fprintf(aaa,"time\n");
 		if(parts.getLast().time.count !=0 &&
 			parts.getLast().time.base != 0)
 		{
@@ -158,15 +242,13 @@ void ChooseAndLoadFile::parseLine(String line, FILE* aaa)
 			ScorePart newPart = ScorePart();
 			newPart.measureNumber = actualMeasure;
 			parts.add(newPart);
-			fprintf(aaa,"newPart time\n");
 		}
 		String timeSign = line.substring(6);
-		parseTime(timeSign,aaa);
+		parseTime(timeSign);
 	}
 	// key change notification
 	else if(line.substring(0,5)=="\\key ")
 	{
-		fprintf(aaa,"key\n");
 		if(parts.getLast().key.form != noForm && 
 			parts.getLast().key.pitch != noPitch)
 		{
@@ -174,15 +256,13 @@ void ChooseAndLoadFile::parseLine(String line, FILE* aaa)
 			ScorePart newPart = ScorePart();
 			newPart.measureNumber = actualMeasure;
 			parts.add(newPart);
-			fprintf(aaa,"newPart key\n");
 		}
 		String keySign = line.substring(5);
-		parseKey(keySign,aaa);
+		parseKey(keySign);
 	}
 	// tempo change notification
 	else if(line.substring(0,7)=="\\tempo ")
 	{
-		fprintf(aaa,"tempo\n");
 		if(parts.getLast().tempo.base != 0 && 
 			parts.getLast().tempo.value != 0)
 		{
@@ -190,10 +270,9 @@ void ChooseAndLoadFile::parseLine(String line, FILE* aaa)
 			ScorePart newPart = ScorePart();
 			newPart.measureNumber = actualMeasure;
 			parts.add(newPart);
-			fprintf(aaa,"newPart tempo\n");
 		}
 		String tempoSign = line.substring(7);
-		parseTempo(tempoSign,aaa);
+		parseTempo(tempoSign);
 	}
 	// end of score
 	else if(line.substring(0,1) == "}")
@@ -203,19 +282,17 @@ void ChooseAndLoadFile::parseLine(String line, FILE* aaa)
 	// normal notes
 	else
 	{
-		fprintf(aaa,"normal notes\n");
 		StringArray array=StringArray();
 		array.addTokens(line,false);
 		int measureSize = parts.getLast().time.count;
 		for (int i=0;i<array.size();i++)
 		{
-			fprintf(aaa,"read:%s\n",array[i]);
-			parseNote(array[i],aaa);
+			parseNote(array[i]);
 		}
 	}
 }
 
-void ChooseAndLoadFile::parseClef(String clef, FILE* aaa)
+void ChooseAndLoadFile::parseClef(String clef)
 {
 	ScorePart part = parts.getLast();
 	if (clef.substring(0,7) == "treble")
@@ -225,24 +302,21 @@ void ChooseAndLoadFile::parseClef(String clef, FILE* aaa)
 	else
 		part.clef = wrongClef;
 	String aa = String(part.clef);
-	fprintf(aaa,"clef recognized: %s\n",aa);
 	parts.removeLast();
 	parts.add(part);
 }
 
-void ChooseAndLoadFile::parseTime(String time, FILE* aaa)
+void ChooseAndLoadFile::parseTime(String time)
 {
 	time.trim();
 	ScorePart part = parts.getLast();
 	part.time.count = (time.substring(0,time.indexOf("/"))).getIntValue();
 	part.time.base = (time.substring(time.indexOf("/")+1)).getIntValue();
-	String aa = String(part.time.count)+"/"+String(part.time.base);
-	fprintf(aaa,"time recognized: %s\n",aa);
 	parts.removeLast();
 	parts.add(part);
 }
 
-void ChooseAndLoadFile::parseKey(String key, FILE* aaa)
+void ChooseAndLoadFile::parseKey(String key)
 {
 	ScorePart part = parts.getLast();
 	if (key.substring(0,4) == "cis" || key.substring(0,4) == "des")
@@ -313,13 +387,11 @@ void ChooseAndLoadFile::parseKey(String key, FILE* aaa)
 		part.key.form = wrongForm;
 	}
 
-	String aa = String(part.key.pitch)+" "+String(part.key.form);
-	fprintf(aaa,"key recognized: %s\n",aa);
 	parts.removeLast();
 	parts.add(part);
 }
 
-void ChooseAndLoadFile::parseTempo(String tempo, FILE* aaa)
+void ChooseAndLoadFile::parseTempo(String tempo)
 {
 	ScorePart part = parts.getLast();
 	
@@ -356,12 +428,11 @@ void ChooseAndLoadFile::parseTempo(String tempo, FILE* aaa)
 		part.tempo.value = tempoArray[tempoArray.size()-1].getIntValue();
 	}
 
-	fprintf(aaa,"tempo recognized: %d = %d\n",part.tempo.base, part.tempo.value);
 	parts.removeLast();
 	parts.add(part);
 }
 
-void ChooseAndLoadFile::parseNote(String noteString, FILE* aaa)
+void ChooseAndLoadFile::parseNote(String noteString)
 {
 	ScorePart part = parts.getLast();
 	Note note;
@@ -460,15 +531,12 @@ void ChooseAndLoadFile::parseNote(String noteString, FILE* aaa)
 		if (parts[parts.size()-2].notes.getLast().pitch - note.pitch > 5)
 		{
 			++(note.octave);
-			//fprintf(aaa,"octave ++");
 		}
 		else if (parts[parts.size()-2].notes.getLast().pitch - note.pitch < -5)
 		{
 			--(note.octave);
-			//fprintf(aaa,"octave --");
 		}
 	}
-	// TODO: zmiana oktawy dla bliskich dŸwiêków
 	for (int i=0;i<noteString.length();++i)
 	{
 		if(noteString.substring(i,i+1) == "'")
@@ -503,40 +571,26 @@ void ChooseAndLoadFile::parseNote(String noteString, FILE* aaa)
 	}
 	else
 	{
-		int duration = noteString.getIntValue();
+		float duration = noteString.getIntValue();
 
-		note.duration = ceil( (float)part.time.base / (float)duration );
+		note.duration = (float)part.time.base / (float)duration;
 		for (int i=0;i<dotsCount;i++)
 		{
 			note.duration *= 1.5;
 		}
 	}
 
+	actualMeasureCount += note.duration;
+	if (actualMeasureCount >= parts[parts.size()-1].time.count)
+	{
+		actualMeasure++;
+		actualMeasureCount = 0;
+	}
 	part.notes.add(note);
 
-	String aa = String(note.pitch)+" "+String(note.duration)+" "+String(note.octave);
-	fprintf(aaa,"note recognized: %s\n",aa);
 	parts.removeLast();
 	parts.add(part);
 }
-
-void ChooseAndLoadFile::paint (Graphics& g)
-{
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
-    g.fillAll (Colours::white);
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
-}
-
-void ChooseAndLoadFile::resized()
-{
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
-}
-
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...

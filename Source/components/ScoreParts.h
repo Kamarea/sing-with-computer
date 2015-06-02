@@ -32,19 +32,19 @@ enum Clef {
 enum Pitch {
 	wrongPitch = -1,
 	noPitch,
-	c,
-	cis,
-	d,
-	dis,
-	e,
-	f,
-	fis,
-	g,
-	gis,
-	a,
-	ais,
-	b,
-	rest
+	c = 2,
+	cis = 3,
+	d = 4,
+	dis = 5,
+	e = 6,
+	f = 8,
+	fis = 9,
+	g = 10,
+	gis = 11,
+	a = 12,
+	ais = 13,
+	b = 14,
+	rest = 16
 };
 
 #define	FreqNoPitch 0;
@@ -75,7 +75,7 @@ struct Key {
 
 struct Note {
 	Pitch pitch;
-	int duration;
+	float duration;
 	int octave;
 };
 

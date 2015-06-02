@@ -69,15 +69,25 @@ private:
 	File openFile;
 	String data;
 	int actualMeasure;
+	float actualMeasureCount;
 	int mainOctave;
+	Label* desc1;
+	Label* fileChosen;
+	Label* desc2;
+	Label* measureNumber;
+	Label* desc3;
+	Label* title;
+	Label* desc4;
+	Label* composer;
+
 
 	void readScore(int position);
-	void parseLine(String line, FILE* log);
-	void parseClef(String clef, FILE* log);
-	void parseTime(String time, FILE* log);
-	void parseKey(String key, FILE* log);
-	void parseTempo(String tempo, FILE* log);
-	void parseNote(String note, FILE* log);
+	void parseLine(String line);
+	void parseClef(String clef);
+	void parseTime(String time);
+	void parseKey(String key);
+	void parseTempo(String tempo);
+	void parseNote(String note);
     //[/UserVariables]
 
     //==============================================================================

@@ -1,5 +1,6 @@
 #include "AudioPitchPage.h"
 #include "AudioTabComponent.h"
+#include <list>
 //#include "logs.h"
 
 AudioPitchPage* AudioPitchPage::instance;
@@ -379,6 +380,16 @@ void AudioPitchPage::playClicked(File directory, int* position, std::vector<floa
 	lock.exit();
 	restsPercentage = 0;
 	pitchPercentage = 0;
+	
+	
+	numberOfSamplesRead = 0;
+	numberOfSamplesRecalculated = 512;
+	pitches.clear();
+	pitchErrorsTable.clear();
+	rythmErrorsTable.clear();
+	allSamples.clear();
+	recordedSamples.clear();
+	recordedDistances.clear();
 }
 
 void AudioPitchPage::stopClicked()
@@ -432,15 +443,17 @@ void AudioPitchPage::calculateDistances()
 	}
 	shortScore.push_back(scorePitches[recordedNumber - 1]);
 	int shortScoreIter = 0;
-	std::vector<float> tempScore, tempRecord;
-	tempScore.resize(5);
-	tempRecord.resize(5);
+	
+	pitchErrorsTable.resize(std::min<int>(end - begin, scorePitches.size()), 0);
+	rythmErrorsTable.resize(std::min<int>(end - begin, scorePitches.size()), 0);
+
 	for (int i = 0; i < recordedNumber; i++)
 	{
 		if ((recordedSamples[i] <= 0 && scorePitches[i] > 0) ||
 			(recordedSamples[i] > 0 && scorePitches[i] <= 0))
 		{
 			restErrors++;
+			rythmErrorsTable[i] = 1;
 		}
 		else
 		{
@@ -454,19 +467,27 @@ void AudioPitchPage::calculateDistances()
 					if (shortScoreIter < shortScore.size())
 						shortScoreIter++;
 					rythmErrors++;
+					rythmErrorsTable[i] = 1;
 				}
 				else if (abs(recordedSamples[i] - shortScore[std::min<int>(shortScore.size() - 1,shortScoreIter + 1)]) < 0.4)
 				{
 					recordedDistances[i] = abs(recordedSamples[i] - 
 							shortScore[std::min<int>(shortScore.size() - 1,shortScoreIter + 1)]);
 					rythmErrors++;
+					rythmErrorsTable[i] = 1;
 				}
 				else
 				{
 					if (recordedDistances[i] < 0.75)
+					{
 						wrongPitches += 0.5 * recordedDistances[i];
+						pitchErrorsTable[i] = 0.5 * recordedDistances[i];
+					}
 					else
+					{
 						wrongPitches += 1;
+						pitchErrorsTable[i] = 1;
+					}
 				}
 			}
 			else
@@ -477,6 +498,9 @@ void AudioPitchPage::calculateDistances()
 			}
 		}
 	}
+
+	calculateWrongest();
+
 	float restsWrongPercentage = (float)(restErrors + rythmErrors) / (float)recordedNumber;
 	float pitchWrongPercentage = (float)wrongPitches / (float)recordedNumber;
 	restsPercentage = 100 * (1 - restsWrongPercentage);
@@ -487,7 +511,79 @@ void AudioPitchPage::calculateDistances()
 	scoreTable->updateScores();
 }
 
-void AudioPitchPage::calculateIfProlongedNote(std::vector<float> score, std::vector<float> record)
+void AudioPitchPage::calculateWrongest()
 {
+	std::list<std::pair<int, int>> wrongs;
+	std::vector<int> errors;
+	errors.resize(pitchErrorsTable.size(), 0);
+	// pitch
+	for (int i = 0; i < errors.size(); i++)
+	{
+		if (pitchErrorsTable[i] > 0)
+			errors[i] = 1;
+	}
+	// rythm
+	for (int i = 0; i < errors.size(); i++)
+	{
+		if (rythmErrorsTable[i] > 0)
+			errors[i] = 1;
+	}
 
+	// add all errors as pairs
+	int i = 0;
+	while (i < errors.size())
+	{
+		if (errors[i] > 0)
+		{
+			std::pair<int, int> pair;
+			pair.first = i;
+			i++;
+			while (i < errors.size() && errors[i] > 0)
+			{
+				i++;
+			}
+			pair.second = i;
+			wrongs.push_back(pair);
+		}
+		i++;
+	}
+
+	// remove small not errors to smoothe
+	for (std::list<std::pair<int,int>>::iterator it = wrongs.begin(); it != wrongs.end();)
+	{
+		if (++it != wrongs.end() && it->first - (--it)->second < 5)
+		{
+			int beg = it->first;
+			int end = (++it)->second;
+			(--it)->second = end;
+			std::list<std::pair<int,int>>::iterator it2(it);
+			it2++;
+			wrongs.remove(*it2);
+		}
+		else
+			if (it != wrongs.end())
+				it++;
+
+	}
+
+	// remove small errors
+	for (std::list<std::pair<int,int>>::iterator it = wrongs.begin(); it != wrongs.end();)
+	{
+		if (it->second - it->first < 5)
+		{
+			std::list<std::pair<int,int>>::iterator it2(it);
+			it++;
+			wrongs.remove(*it2);
+		}
+		else
+			if (it != wrongs.end())
+				it++;
+
+	}
+	// znaleŸæ najd³u¿szy b³¹d
+	// dopasowaæ do pocz¹tków taktów
+	// sprawdziæ, czy nie za krótki fragment, ew. wyd³u¿yæ
+	// okienko - czy przeæwiczyæ
+	// jeœli tak, to przepisujemy scorePitches na te z³e
+	// i lecim dalej
 }

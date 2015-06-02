@@ -40,6 +40,10 @@ public:
 	void setMeanNoise(float);
 	void setSpectroNoise(std::vector<float>);
 	std::vector<String> getTexts();
+	bool getShowScore();
+
+	String title;
+	String composer;
 
 private:
 	static Globals* instance;
@@ -47,6 +51,7 @@ private:
 	float meanNoise;
 	std::vector<float> spectroNoise;
 	enum lang currentLang;
+	bool showScore;
 
 
 	std::vector<std::vector<String>> languagePack;

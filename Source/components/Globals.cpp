@@ -69,6 +69,11 @@ void Globals::parseLine(String line)
 	{
 		parseSpectroNoise(pair.second);
 	}
+
+	if (pair.first == "showScore")
+	{
+		showScore = pair.second.getIntValue();
+	}
 }
 
 void Globals::parseSpectroNoise(String line)
@@ -143,6 +148,11 @@ std::vector<String> Globals::getTexts()
 	return languagePack[currentLang];
 }
 
+bool Globals::getShowScore()
+{
+	return showScore;
+}
+
 void Globals::loadLanguagePack()
 {
 	std::vector<String> plTexts;
@@ -179,4 +189,18 @@ void Globals::loadLanguagePack()
 	languagePack[1].push_back(L"Load audio file");
 	languagePack[0].push_back(L"Pomiar szumu");//13
 	languagePack[1].push_back(L"Noise measurement");
+	languagePack[0].push_back(L"Wybrano plik");//14
+	languagePack[1].push_back(L"File chosen");
+	languagePack[0].push_back(L"Tytu³");//15
+	languagePack[1].push_back(L"Title");
+	languagePack[0].push_back(L"Kompozytor");//16
+	languagePack[1].push_back(L"Composer");
+	languagePack[0].push_back(L"Liczba taktów");//17
+	languagePack[1].push_back(L"Measure number");
+	languagePack[0].push_back(L"Oscylogram");//18
+	languagePack[1].push_back(L"Oscilogram");
+	languagePack[0].push_back(L"Wysokoœæ");//19
+	languagePack[1].push_back(L"Pitch");
+	languagePack[0].push_back(L"Spektrogram");//20
+	languagePack[1].push_back(L"Spectrogram");
 }

@@ -55,6 +55,8 @@ public:
 		m_component->isRecording = true;
 		m_component->m_spectroPage->playClicked(directory);
 		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitchesMIDI));
+		//if (m_component->hasScore)
+		//	m_component->scoreImage->playClicked();
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
 	};
@@ -73,6 +75,8 @@ public:
 		m_component->isRecording = false;
 		m_component->m_spectroPage->stopClicked();
 		m_component->m_pitchPage->stopClicked();
+		//if (m_component->hasScore)
+		//	m_component->scoreImage->stopClicked();
 		m_component->recorder->stop();
 		m_component->deviceManager.removeAudioCallback (m_component->recorder);
 		//delete m_component->recorder;
@@ -107,8 +111,11 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
-	scoreImage = new ScoreImage(score);
-	addAndMakeVisible(scoreImage);
+	if (Globals::getInstance()->getShowScore())
+	{
+		scoreImage = new ScoreImage(score);
+		addAndMakeVisible(scoreImage);
+	}
 
 	AudioDeviceManager::AudioDeviceSetup setup;
 	deviceManager.getAudioDeviceSetup(setup);
@@ -173,9 +180,9 @@ void AudioTabComponent::init(TabbedComponent* tabbedComponent, bool isScore)
 	m_ampliPage =  AudioAmplitudePage::getInstance();
 	m_spectroPage =  AudioSpectrogramPage::getInstance();
 	m_pitchPage =  AudioPitchPage::getInstance();
-    tabbedComponent->addTab (L"Oscylogram", Colours::lightgrey, m_ampliPage, true);
-    tabbedComponent->addTab (L"Spektrogram", Colours::lightgrey, m_spectroPage, true);
-    tabbedComponent->addTab (L"Wysokoœæ", Colours::lightgrey, m_pitchPage, true);
+    tabbedComponent->addTab (Globals::getInstance()->getTexts()[18], Colours::lightgrey, m_ampliPage, true);
+    tabbedComponent->addTab (Globals::getInstance()->getTexts()[20], Colours::lightgrey, m_spectroPage, true);
+    tabbedComponent->addTab (Globals::getInstance()->getTexts()[19], Colours::lightgrey, m_pitchPage, true);
     tabbedComponent->setCurrentTabIndex (0);
 
 	playButton = new ImageButton("play");
@@ -225,7 +232,8 @@ AudioTabComponent::~AudioTabComponent()
 	deleteAndZero (playButton);
 	deleteAndZero (stopButton);
 	deleteAndZero (m_soundInput);
-	deleteAndZero (scoreImage);
+	if (Globals::getInstance()->getShowScore())
+		deleteAndZero (scoreImage);
 	if (hasScore)
 		deleteAndZero (scoreTable);
 
@@ -272,8 +280,9 @@ void AudioTabComponent::resized()
 	if(hasScore)
 	{
 		tabbedComponent->setBounds (0, getHeight() / 2 , getWidth(), getHeight() / 2);
-		scoreTable->setBounds (getWidth() - 200,50,200,getHeight()/ 2 - 30);//getWidth() - 200, 100, 200, getHeight() / 2 - 50);
-		scoreImage->setBounds(0,0,getWidth() - 200, getHeight() / 2);
+		scoreTable->setBounds (getWidth() - 200,50,200,getHeight()/ 2 - 30);
+		if (Globals::getInstance()->getShowScore())
+			scoreImage->setBounds(0,0,getWidth() - 200, getHeight() / 2);
 	}
 	else
 	{

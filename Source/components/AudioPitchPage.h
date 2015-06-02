@@ -31,15 +31,15 @@ public:
     void timerCallback();
 	void playClicked(File directory, int* pitchPosition, std::vector<float>* scorePitches);
 	void stopClicked();
-	void calculateDistances();
 
 	std::vector<float> pitches;
 	int* pitchPosition;
 	std::vector<float> scorePitches;
+	std::vector<float> pitchErrorsTable;
+	std::vector<float> rythmErrorsTable;
 	bool hasScore;
 
 	void setScoreTablePtr(ScoreTable*);
-	void calculateIfProlongedNote(std::vector<float>, std::vector<float>);
 	void updateSamples(int number, std::vector<float>* samples);
 
 private:
@@ -67,6 +67,8 @@ private:
 	float restsPercentage;
 	float pitchPercentage;
 
+	void calculateWrongest();
+	void calculateDistances();
 	float computePitch(float *my_samples);
 	float abs(float a);
 	int power(int a, int b);
