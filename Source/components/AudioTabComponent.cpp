@@ -48,15 +48,21 @@ public:
 		File directory = File(File::getSpecialLocation(File::currentExecutableFile).
 			getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
 		directory.createDirectory();
+
+		m_component->m_pitchPage->setScore(&(m_component->scorePitchesMIDI), m_component->measuresInSamples);
+		float firstSound = m_component->m_pitchPage->getFirstSound();
 		
 		m_component->recorder = new AudioRecorder();
 		m_component->deviceManager.addAudioCallback (m_component->recorder);
 		m_component->recorder->startRecording (directory.getNonexistentChildFile("rawSamples", ".wav"));
 		m_component->isRecording = true;
 		m_component->m_spectroPage->playClicked(directory);
-		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition), &(m_component->scorePitchesMIDI));
-		//if (m_component->hasScore)
-		//	m_component->scoreImage->playClicked();
+		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition));
+		if (Globals::getInstance()->getShowScore())
+		{
+			if (m_component->hasScore)
+				m_component->scoreImage->playClicked();
+		}
 		m_component->stopButton->setEnabled(true);
 		m_component->playButton->setEnabled(false);
 	};
@@ -75,15 +81,16 @@ public:
 		m_component->isRecording = false;
 		m_component->m_spectroPage->stopClicked();
 		m_component->m_pitchPage->stopClicked();
-		//if (m_component->hasScore)
-		//	m_component->scoreImage->stopClicked();
+		if (Globals::getInstance()->getShowScore())
+		{
+			if (m_component->hasScore)
+				m_component->scoreImage->stopClicked();
+		}
 		m_component->recorder->stop();
 		m_component->deviceManager.removeAudioCallback (m_component->recorder);
-		//delete m_component->recorder;
 		m_component->recorder = 0;
 		m_component->stopButton->setEnabled(false);
 		m_component->playButton->setEnabled(true);
-		//m_component->actualPitchPosition = 0;
 	};
 	AudioTabComponent* m_component;
 };
@@ -92,12 +99,9 @@ AudioTabComponent::AudioTabComponent ()
     : tabbedComponent (0),
 	actualPitchPosition (0)
 {
-	//TabbedComponent* comp = &tabbedComp
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
 	init(tabbedComponent,false);
 	
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
 }
 
 AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
@@ -129,11 +133,15 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	int actualTempoBase;
 	Pitch lastPitch = score[0].notes[0].pitch;
 	int lastOctave = score[0].notes[0].octave;
-
+	int count = 0;
+	int base = 0;
+	int actualMeasure = 1;
+	measuresInSamples.push_back(std::pair<int,int>(1,0));
 	for (int i=0; i < score.size(); i++)
 	{
 		actualTempo = score[i].tempo.value;
 		actualTempoBase = score[i].tempo.base;
+		base = score[i].time.count;
 
 		// dla k = 0; note.value * (600 / n) -> zapisaæ czêstotliwoœæ w tabeli
 		// dlugosc = note.value / tempo.base
@@ -161,6 +169,13 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 				scorePitches.add(score[i].notes[k]);
 				scorePitchesFreq.add(freq);
 				scorePitchesMIDI.push_back(pitchMIDI);
+			}
+			count += score[i].notes[k].duration;
+			if (count >= base)
+			{
+				actualMeasure++;
+				measuresInSamples.push_back(std::pair<int,int>(actualMeasure,scorePitchesMIDI.size()));
+				count = 0;
 			}
 		}
 	}

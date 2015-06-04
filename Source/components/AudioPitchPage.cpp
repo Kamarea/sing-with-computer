@@ -368,11 +368,11 @@ void AudioPitchPage::setScoreTablePtr(ScoreTable* table)
 	scoreTable = table;
 }
 
-void AudioPitchPage::playClicked(File directory, int* position, std::vector<float>* scorePitchesIn)
+void AudioPitchPage::playClicked(File directory, int* position)
 {
 	pitchPosition = position;
 	*position = 0;
-	scorePitches = *scorePitchesIn;
+	
 	fileOut = new FileOutputStream(directory.getChildFile("pitchSamples.smp"));
 	lock.enter();
 	begin=pitches.size();
@@ -499,7 +499,8 @@ void AudioPitchPage::calculateDistances()
 		}
 	}
 
-	calculateWrongest();
+	if (scorePitches.size() >= measuresInSamples[measuresInSamples.size() - 1].second - 1)
+		calculateWrongest();
 
 	float restsWrongPercentage = (float)(restErrors + rythmErrors) / (float)recordedNumber;
 	float pitchWrongPercentage = (float)wrongPitches / (float)recordedNumber;
@@ -581,9 +582,161 @@ void AudioPitchPage::calculateWrongest()
 
 	}
 	// znaleŸæ najd³u¿szy b³¹d
+	int max = 0;
+	std::pair<int, int> longest;
+	for (std::list<std::pair<int,int>>::iterator it = wrongs.begin(); it != wrongs.end(); it++)
+	{
+		if (it->second - it->first > max)
+		{
+			max = it->second - it->first;
+			longest.first = it->first;
+			longest.second = it->second;
+		}
+	}
 	// dopasowaæ do pocz¹tków taktów
+	std::pair<int, int> measures;
+
+	// pocz¹tek
+	int j = 0;
+	while (j < measuresInSamples.size() - 1 && longest.first > measuresInSamples[j].second)
+	{
+		j++;
+	}
+	if (j != 0)
+	{
+		longest.first = measuresInSamples[j - 1].second;
+		measures.first = measuresInSamples[j - 1].first;
+	}
+	else
+	{
+		longest.first = measuresInSamples[j].second;
+		measures.first = measuresInSamples[j].first;
+	}
+
+	// koniec
+	j = 0;
+	while (j < measuresInSamples.size() - 1 && longest.second > measuresInSamples[j].second)
+	{
+		j++;
+	}
+	longest.second = measuresInSamples[j].second - 1;
+	measures.second = measuresInSamples[j - 1].first;
+	
 	// sprawdziæ, czy nie za krótki fragment, ew. wyd³u¿yæ
+	if ( measures.second - measures.first < 3)
+	{
+		if (measures.first > 1)
+		{
+			measures.first--;
+			longest.first = measuresInSamples[measures.first].second;
+		}
+		if (measures.second < measuresInSamples.size() - 2)
+		{
+			measures.second++;
+			longest.second = measuresInSamples[measures.second + 1].second - 1;
+		}
+	}
+
 	// okienko - czy przeæwiczyæ
+	window = new WindowExercises(measures);
+	addAndMakeVisible(window);
+	//userChoice->setBounds(0,0,500,200);
+	int result = DialogWindow::showModalDialog(Globals::getInstance()->getTexts()[21], window, this->findParentComponentOfClass<AudioTabComponent>(), Colours::white, false);
+	deleteAndZero(window);
 	// jeœli tak, to przepisujemy scorePitches na te z³e
+	if (result == 1)
+	{
+		rewriteScore(longest);
+	}
 	// i lecim dalej
+}
+
+void AudioPitchPage::rewriteScore(std::pair<int,int> measures)
+{
+	// kopia tego, co ma byæ
+	std::vector<float> tmp;
+	tmp.resize(measures.second - measures.first);
+	for (int i = measures.first; i < measures.second; i++)
+	{
+		tmp[i - measures.first] = scorePitches[i];
+	}
+	// clear wektora
+	scorePitches.clear();
+	// wpisaæ na wektor kopiê
+	for(int i = 0; i < tmp.size(); i++)
+	{
+		scorePitches.push_back(tmp[i]);
+	}
+}
+
+void AudioPitchPage::setScore(std::vector<float>* scorePitchesIn, std::vector<std::pair<int,int>> measures)
+{
+	if (scorePitches.size() == 0)
+	{
+		scorePitches = *scorePitchesIn;
+	}
+	measuresInSamples = measures;
+}
+
+float AudioPitchPage::getFirstSound()
+{
+	return scorePitches[0];
+}
+
+class ExercisesButtonListener : public Button::Listener
+{
+public:
+	ExercisesButtonListener(WindowExercises* comp)
+	{
+		comp_ = comp;
+	}
+	void buttonClicked(Button* button)
+	{
+		if (button->getButtonText() == Globals::getInstance()->getTexts()[23])
+		{
+			if (DialogWindow* dw = comp_->findParentComponentOfClass<DialogWindow>())
+					dw->exitModalState(1);
+		}
+		else 
+		{
+			if (DialogWindow* dw = comp_->findParentComponentOfClass<DialogWindow>())
+					dw->exitModalState(0);
+		}
+	}
+	WindowExercises* comp_;
+};
+
+WindowExercises::WindowExercises(std::pair<int,int> measures)
+{
+	setBounds(0,0,300,100);
+
+	label = new Label();
+	String string = Globals::getInstance()->getTexts()[22];
+	string.append(String(measures.first), 10);
+	string.append(" - ", 10);
+	string.append(String(measures.second), 10);
+	string.append("?", 10);
+	label->setText(string, true);
+	addAndMakeVisible(label);
+	label->setBounds(50, 20, 200, 30);
+	
+	ExercisesButtonListener* listener = new ExercisesButtonListener(this);
+	buttonYes = new TextButton();
+	buttonYes->setButtonText(Globals::getInstance()->getTexts()[23]);
+	buttonYes->setBounds(50, 60, 70, 30);
+	buttonYes->addListener(listener);
+	addAndMakeVisible(buttonYes);
+	
+	buttonNo = new TextButton();
+	buttonNo->setButtonText(Globals::getInstance()->getTexts()[24]);
+	buttonNo->setBounds(180, 60, 70, 30);
+	buttonNo->addListener(listener);
+	addAndMakeVisible(buttonNo);
+}
+
+WindowExercises::~WindowExercises()
+{
+	deleteAndZero(label);
+	deleteAndZero(buttonYes);
+	deleteAndZero(buttonNo);
 }

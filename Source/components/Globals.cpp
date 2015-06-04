@@ -170,7 +170,7 @@ void Globals::loadLanguagePack()
 	languagePack[0].push_back(L"Wybierz");// 3
 	languagePack[1].push_back(L"Choose");
 	languagePack[0].push_back(L"lub dodaj nowego:");// 4
-	languagePack[1].push_back(L"or adda new one:");
+	languagePack[1].push_back(L"or add a new one:");
 	languagePack[0].push_back(L"Dodaj");// 5
 	languagePack[1].push_back(L"Add");
 	languagePack[0].push_back(L"U¿ytkownik ju¿ istnieje!");//6
@@ -203,4 +203,13 @@ void Globals::loadLanguagePack()
 	languagePack[1].push_back(L"Pitch");
 	languagePack[0].push_back(L"Spektrogram");//20
 	languagePack[1].push_back(L"Spectrogram");
+	languagePack[0].push_back(L"Przeæwiczyæ?");//21
+	languagePack[1].push_back(L"Practise?");
+	languagePack[0].push_back(L"Czy chcesz przeæwiczyæ takty ");//22
+	languagePack[1].push_back(L"Do you want to practise measures ");
+	languagePack[0].push_back(L"Tak");//23
+	languagePack[1].push_back(L"Yes");
+	languagePack[0].push_back(L"Nie");//24
+	languagePack[1].push_back(L"No");
+
 }

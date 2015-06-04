@@ -12,6 +12,19 @@ class ScoreTable;
    coming into the audio input.
 */
 
+class WindowExercises	: public Component
+{
+public:
+	WindowExercises(std::pair<int,int> measures);
+	~WindowExercises();
+
+private:
+	Label* label;
+	TextButton* buttonYes;
+	TextButton* buttonNo;
+
+};
+
 class AudioPitchPage  : public Component,
                         public Timer
 {
@@ -29,7 +42,7 @@ public:
 
     void paint (Graphics& g);
     void timerCallback();
-	void playClicked(File directory, int* pitchPosition, std::vector<float>* scorePitches);
+	void playClicked(File directory, int* pitchPosition);
 	void stopClicked();
 
 	std::vector<float> pitches;
@@ -38,9 +51,12 @@ public:
 	std::vector<float> pitchErrorsTable;
 	std::vector<float> rythmErrorsTable;
 	bool hasScore;
+	float getFirstSound();
+	void setScore(std::vector<float>* scorePitchesIn, std::vector<std::pair<int,int>> measures);
 
 	void setScoreTablePtr(ScoreTable*);
 	void updateSamples(int number, std::vector<float>* samples);
+	WindowExercises* window;
 
 private:
 	static AudioPitchPage* instance;
@@ -63,6 +79,7 @@ private:
 	bool isRecording;
 	int recordedScoreNumber;
 	ScoreTable* scoreTable;
+	std::vector<std::pair<int,int>> measuresInSamples;
 	
 	float restsPercentage;
 	float pitchPercentage;
@@ -75,6 +92,7 @@ private:
 	float mean(float a[]);
 	float max(float a[]);
 	float min(float a[]);
+	void rewriteScore(std::pair<int,int>);
 
 	
     AudioPitchPage();

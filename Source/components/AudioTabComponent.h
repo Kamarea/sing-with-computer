@@ -93,6 +93,7 @@ public:
 	ScopedPointer<AudioRecorder> recorder;
     AudioDeviceManager deviceManager;
 	bool hasScore;
+	std::vector<std::pair<int,int>> measuresInSamples;
 	
 	ImageButton* playButton;
 	ImageButton* stopButton;
