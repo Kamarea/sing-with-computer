@@ -33,6 +33,7 @@
 
 
 //[/Headers]
+class SineWaveComponent;
 
 class ScoreTable : public Component
 {
@@ -77,6 +78,7 @@ public:
     void paint (Graphics& g);
     void resized();
     void timerCallback();
+	void afterMetronome();
 
 	AudioSpectrogramPage* m_spectroPage;
 	AudioAmplitudePage* m_ampliPage;
@@ -94,11 +96,16 @@ public:
     AudioDeviceManager deviceManager;
 	bool hasScore;
 	std::vector<std::pair<int,int>> measuresInSamples;
+	int sampleRate;
+    MidiKeyboardState keyboardState;
+	MidiKeyboardComponent* keyboardComponent;
+	SineWaveComponent* sineComp;
 	
 	ImageButton* playButton;
 	ImageButton* stopButton;
 
 	ScoreTable* scoreTable;
+	File directory;
 
     //==============================================================================
     juce_UseDebuggingNewOperator

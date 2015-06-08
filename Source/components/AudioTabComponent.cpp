@@ -25,8 +25,76 @@
 #include <sstream>
 
 #include "AudioTabComponent.h"
+#include <math.h>
 
 //[/MiscUserDefs]
+
+class SineWaveComponent :	public Component,
+							public AudioIODeviceCallback,
+							public Timer
+{
+public:
+	SineWaveComponent(int firstSound, int count_in, int tempoMs, AudioTabComponent* component)
+	{
+		sound = 440 * std::pow(2,((float)firstSound-57)/12);
+		actualSound = sound;
+		sampleRate = 44100;
+		sampleNumber = 0;
+		tempo = tempoMs;
+		count = count_in;
+		counter = 0;
+		m_component = component;
+		startTimer (tempoMs / 2);
+	}
+	~SineWaveComponent()
+	{
+	}
+
+	void audioDeviceAboutToStart (AudioIODevice* device)
+	{
+	}
+    void audioDeviceStopped()
+	{
+	}
+    void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
+                                float** outputChannelData, int numOutputChannels, int numSamples)
+	{
+		float value;
+		for(int i = 0; i < numSamples; i++)
+		{
+			value = std::sin(2*actualSound * ((float)((sampleNumber + i)) / sampleRate));
+			if (value < 0)
+				value *= (-1);
+			for (int chan = 0; chan < numOutputChannels; chan++)
+			{
+				outputChannelData[chan][i] = value;
+			}
+		}
+		sampleNumber+=numSamples;
+	}
+	
+    void timerCallback()
+	{
+		if (actualSound == sound)
+			actualSound = 0.0;
+		else
+		{
+			actualSound = sound;
+			counter++;
+			if (counter == count)
+				m_component->afterMetronome();
+		}
+	}
+private:
+	float sound;
+	float actualSound;
+	int sampleRate;
+	int sampleNumber;
+	int tempo;
+	int counter;
+	int count;
+	AudioTabComponent* m_component;
+};
 
 //==============================================================================
 class PlayListener: public Button::Listener 
@@ -38,6 +106,8 @@ public:
 	};
 	void buttonClicked(Button* button)
 	{		
+		
+		m_component->playButton->setEnabled(false);
 		Time actualTime=Time::getCurrentTime();
 
 		std::ostringstream sstream;
@@ -48,23 +118,21 @@ public:
 		File directory = File(File::getSpecialLocation(File::currentExecutableFile).
 			getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
 		directory.createDirectory();
-
-		m_component->m_pitchPage->setScore(&(m_component->scorePitchesMIDI), m_component->measuresInSamples);
-		float firstSound = m_component->m_pitchPage->getFirstSound();
-		
-		m_component->recorder = new AudioRecorder();
-		m_component->deviceManager.addAudioCallback (m_component->recorder);
-		m_component->recorder->startRecording (directory.getNonexistentChildFile("rawSamples", ".wav"));
-		m_component->isRecording = true;
-		m_component->m_spectroPage->playClicked(directory);
-		m_component->m_pitchPage->playClicked(directory, &(m_component->actualPitchPosition));
-		if (Globals::getInstance()->getShowScore())
+		m_component->directory = directory;
+		if(m_component->hasScore)
 		{
-			if (m_component->hasScore)
-				m_component->scoreImage->playClicked();
+			m_component->m_pitchPage->setScore(&(m_component->scorePitchesMIDI), m_component->measuresInSamples);
+			// wygranie pocz¹tkowego dŸwiêku i metronomu
+			float firstSound = m_component->m_pitchPage->getFirstSound();
+			int tempoMs = 60 * 1000 / m_component->score[0].tempo.value;
+			int count = m_component->score[0].time.count;
+
+			m_component->sineComp = new SineWaveComponent(firstSound, count, tempoMs, m_component);
+			m_component->deviceManager.addAudioCallback (m_component->sineComp);
+		} else
+		{
+			m_component->afterMetronome();
 		}
-		m_component->stopButton->setEnabled(true);
-		m_component->playButton->setEnabled(false);
 	};
 	AudioTabComponent* m_component;
 };
@@ -97,7 +165,9 @@ public:
 
 AudioTabComponent::AudioTabComponent ()
     : tabbedComponent (0),
-	actualPitchPosition (0)
+	actualPitchPosition (0),
+    keyboardComponent (0),
+	sampleRate(0)
 {
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
 	init(tabbedComponent,false);
@@ -106,7 +176,9 @@ AudioTabComponent::AudioTabComponent ()
 
 AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
     : tabbedComponent (0),
-	actualPitchPosition (0)
+	actualPitchPosition (0),
+    keyboardComponent (0),
+	sampleRate(0)
 {
 	
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
@@ -115,6 +187,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
+	keyboardComponent = new MidiKeyboardComponent (keyboardState, MidiKeyboardComponent::horizontalKeyboard);
 	if (Globals::getInstance()->getShowScore())
 	{
 		scoreImage = new ScoreImage(score);
@@ -123,7 +196,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 
 	AudioDeviceManager::AudioDeviceSetup setup;
 	deviceManager.getAudioDeviceSetup(setup);
-	int sampleRate = (setup.sampleRate * 60) / 512 / 2.1;
+	sampleRate = (setup.sampleRate * 60) / 512 / 2.1;
 
 	m_pitchPage->hasScore = true;
 	m_pitchPage->setScoreTablePtr(scoreTable);
@@ -251,7 +324,8 @@ AudioTabComponent::~AudioTabComponent()
 		deleteAndZero (scoreImage);
 	if (hasScore)
 		deleteAndZero (scoreTable);
-
+	
+    deleteAndZero (keyboardComponent);
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
@@ -307,6 +381,27 @@ void AudioTabComponent::resized()
 	stopButton->setBounds(getWidth()-50,0,50,50);
 	//[UserResized] Add your own custom resize handling here..
     //[/UserResized]
+}
+
+void AudioTabComponent::afterMetronome()
+{
+	if (hasScore)
+	{
+		deviceManager.removeAudioCallback (sineComp);
+		deleteAndZero(sineComp);
+	}
+	recorder = new AudioRecorder();
+	deviceManager.addAudioCallback (recorder);
+	recorder->startRecording (directory.getNonexistentChildFile("rawSamples", ".wav"));
+	isRecording = true;
+	m_spectroPage->playClicked(directory);
+	m_pitchPage->playClicked(directory, &(actualPitchPosition));
+	if (Globals::getInstance()->getShowScore())
+	{
+		if (hasScore)
+			scoreImage->playClicked();
+	}
+	stopButton->setEnabled(true);
 }
 
 ScoreTable::ScoreTable()

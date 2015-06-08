@@ -7,9 +7,11 @@
 #include <vector>
 #include "../component_headers.h"
 
-const float log_10_2=0.30102999566398119521373889472449;
+const float log_10_2 = 0.30102999566398119521373889472449;
 
-const float phi=0.95;
+const float phi = 0.95;
+
+const float pi = 3.14159265359;
 
 const float spectrumResolution = 44100.0 / 1024.0;
 
