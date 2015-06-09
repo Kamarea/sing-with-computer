@@ -34,18 +34,10 @@ class SineWaveComponent :	public Component,
 							public Timer
 {
 public:
-	SineWaveComponent(int firstSound, int count_in, int tempoMs, AudioTabComponent* component)
+	SineWaveComponent(AudioTabComponent* component)
 	{
-		sound = 440 * std::pow(2,((float)firstSound-57)/12);
-		actualSound = sound;
-		actualAmpli = 1;
-		sampleRate = 44100;
-		sampleNumber = 0;
-		tempo = tempoMs;
-		count = count_in;
-		counter = 0;
+		
 		m_component = component;
-		startTimer (tempoMs);
 	}
 	~SineWaveComponent()
 	{
@@ -57,13 +49,26 @@ public:
     void audioDeviceStopped()
 	{
 	}
+	void setParams(int firstSound, int count_in, int tempoMs)
+	{
+		sound = 440 * std::pow(2,((float)firstSound-57)/12);
+		actualSound = sound;
+		actualAmpli = 1;
+		sampleRate = 44100;
+		sampleNumber = 0;
+		tempo = tempoMs / 2;
+		count = count_in;
+		counter = 0;
+		startTimer (tempoMs / 2);
+	}
+
     void audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
                                 float** outputChannelData, int numOutputChannels, int numSamples)
 	{
 		float value;
 		for(int i = 0; i < numSamples; i++)
 		{
-			value = actualAmpli * std::sin(1.6 * actualSound * ((float)((sampleNumber + i)) / sampleRate));
+			value = actualAmpli * std::sin(1.58 * actualSound * ((float)((sampleNumber + i)) / sampleRate));
 			if (value < 0)
 				value *= (-1);
 			for (int chan = 0; chan < numOutputChannels; chan++)
@@ -134,8 +139,8 @@ public:
 			m_component->firstSound = firstSound;
 			m_component->tempoMs = tempoMs;
 			m_component->m_soundInput->isPaused = true;
-
-			m_component->sineComp = new SineWaveComponent(firstSound, count, tempoMs, m_component);
+			m_component->deviceManager.removeAudioCallback(m_component->m_soundInput);
+			m_component->sineComp->setParams(firstSound, count, tempoMs);
 			m_component->deviceManager.addAudioCallback (m_component->sineComp);
 		} else
 		{
@@ -200,6 +205,8 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 		scoreImage = new ScoreImage(score);
 		addAndMakeVisible(scoreImage);
 	}
+	
+	sineComp = new SineWaveComponent(this);
 
 	AudioDeviceManager::AudioDeviceSetup setup;
 	deviceManager.getAudioDeviceSetup(setup);
@@ -323,6 +330,7 @@ AudioTabComponent::~AudioTabComponent()
 	//if(stopButton->isEnabled())
 	//	stopButton->triggerClick();
 	deviceManager.removeAudioCallback (m_soundInput);
+	deleteAndZero(sineComp);
 
     deleteAndZero (tabbedComponent);
 	deleteAndZero (playButton);
@@ -396,7 +404,7 @@ void AudioTabComponent::afterMetronome()
 	if (hasScore)
 	{
 		deviceManager.removeAudioCallback (sineComp);
-		deleteAndZero(sineComp);
+		deviceManager.addAudioCallback (m_soundInput);
 	}
 	m_soundInput->isPaused = false;
 	recorder = new AudioRecorder();
