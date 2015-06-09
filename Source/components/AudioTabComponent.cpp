@@ -61,21 +61,17 @@ public:
                                 float** outputChannelData, int numOutputChannels, int numSamples)
 	{
 		float value;
-		float* table;
-		std::vector<float> tmp;
-		table = (float*)malloc(sizeof(float) * numSamples);
 		for(int i = 0; i < numSamples; i++)
 		{
 			value = actualAmpli * std::sin(1.6 * actualSound * ((float)((sampleNumber + i)) / sampleRate));
 			if (value < 0)
 				value *= (-1);
-			table[i] = value;
-			tmp.push_back(value);
-		}
-		for (int chan = 0; chan < numOutputChannels; chan++)
+			for (int chan = 0; chan < numOutputChannels; chan++)
 			{
-				outputChannelData[chan] = table;
+				outputChannelData[chan][i] = value;
 			}
+		}
+		
 		sampleNumber+=numSamples;
 	}
 	
@@ -86,8 +82,8 @@ public:
 		else
 		{
 			actualAmpli = 1;
-			//counter++;
-			//if (counter == count)
+			counter++;
+			if (counter == count)
 				m_component->afterMetronome();
 		}
 	}
@@ -402,15 +398,6 @@ void AudioTabComponent::afterMetronome()
 		deviceManager.removeAudioCallback (sineComp);
 		deleteAndZero(sineComp);
 	}
-	counter++;
-	if (counter <= count)
-	{
-		
-			sineComp = new SineWaveComponent(firstSound, count, tempoMs, this);
-			deviceManager.addAudioCallback (sineComp);
-	}
-	else
-	{
 	m_soundInput->isPaused = false;
 	recorder = new AudioRecorder();
 	deviceManager.addAudioCallback (recorder);
@@ -424,7 +411,6 @@ void AudioTabComponent::afterMetronome()
 			scoreImage->playClicked();
 	}
 	stopButton->setEnabled(true);
-	}
 }
 
 ScoreTable::ScoreTable()
