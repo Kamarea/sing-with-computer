@@ -38,13 +38,14 @@ public:
 	{
 		sound = 440 * std::pow(2,((float)firstSound-57)/12);
 		actualSound = sound;
+		actualAmpli = 1;
 		sampleRate = 44100;
 		sampleNumber = 0;
 		tempo = tempoMs;
 		count = count_in;
 		counter = 0;
 		m_component = component;
-		startTimer (tempoMs / 2);
+		startTimer (tempoMs);
 	}
 	~SineWaveComponent()
 	{
@@ -60,34 +61,40 @@ public:
                                 float** outputChannelData, int numOutputChannels, int numSamples)
 	{
 		float value;
+		float* table;
+		std::vector<float> tmp;
+		table = (float*)malloc(sizeof(float) * numSamples);
 		for(int i = 0; i < numSamples; i++)
 		{
-			value = std::sin(2*actualSound * ((float)((sampleNumber + i)) / sampleRate));
+			value = actualAmpli * std::sin(1.6 * actualSound * ((float)((sampleNumber + i)) / sampleRate));
 			if (value < 0)
 				value *= (-1);
-			for (int chan = 0; chan < numOutputChannels; chan++)
-			{
-				outputChannelData[chan][i] = value;
-			}
+			table[i] = value;
+			tmp.push_back(value);
 		}
+		for (int chan = 0; chan < numOutputChannels; chan++)
+			{
+				outputChannelData[chan] = table;
+			}
 		sampleNumber+=numSamples;
 	}
 	
     void timerCallback()
 	{
-		if (actualSound == sound)
-			actualSound = 0.0;
+		if (actualAmpli == 1)
+			actualAmpli = 0;
 		else
 		{
-			actualSound = sound;
-			counter++;
-			if (counter == count)
+			actualAmpli = 1;
+			//counter++;
+			//if (counter == count)
 				m_component->afterMetronome();
 		}
 	}
 private:
 	float sound;
 	float actualSound;
+	int actualAmpli;
 	int sampleRate;
 	int sampleNumber;
 	int tempo;
@@ -126,6 +133,11 @@ public:
 			float firstSound = m_component->m_pitchPage->getFirstSound();
 			int tempoMs = 60 * 1000 / m_component->score[0].tempo.value;
 			int count = m_component->score[0].time.count;
+			m_component->count = count;
+			m_component->counter = 1;
+			m_component->firstSound = firstSound;
+			m_component->tempoMs = tempoMs;
+			m_component->m_soundInput->isPaused = true;
 
 			m_component->sineComp = new SineWaveComponent(firstSound, count, tempoMs, m_component);
 			m_component->deviceManager.addAudioCallback (m_component->sineComp);
@@ -171,7 +183,6 @@ AudioTabComponent::AudioTabComponent ()
 {
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
 	init(tabbedComponent,false);
-	
 }
 
 AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
@@ -259,6 +270,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 
 void AudioTabComponent::init(TabbedComponent* tabbedComponent, bool isScore)
 {		
+	counter = 0;
 	hasScore = isScore;
     addAndMakeVisible (tabbedComponent);
     tabbedComponent->setTabBarDepth (30);
@@ -390,6 +402,16 @@ void AudioTabComponent::afterMetronome()
 		deviceManager.removeAudioCallback (sineComp);
 		deleteAndZero(sineComp);
 	}
+	counter++;
+	if (counter <= count)
+	{
+		
+			sineComp = new SineWaveComponent(firstSound, count, tempoMs, this);
+			deviceManager.addAudioCallback (sineComp);
+	}
+	else
+	{
+	m_soundInput->isPaused = false;
 	recorder = new AudioRecorder();
 	deviceManager.addAudioCallback (recorder);
 	recorder->startRecording (directory.getNonexistentChildFile("rawSamples", ".wav"));
@@ -402,6 +424,7 @@ void AudioTabComponent::afterMetronome()
 			scoreImage->playClicked();
 	}
 	stopButton->setEnabled(true);
+	}
 }
 
 ScoreTable::ScoreTable()

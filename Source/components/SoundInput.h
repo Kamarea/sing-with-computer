@@ -24,6 +24,7 @@ public:
                                 float** outputChannelData, int numOutputChannels, int numSamples);
 	std::vector<float> allSamples;
 	CriticalSection lock;
+	bool isPaused;
 
 private:
 	static SoundInput* instance;

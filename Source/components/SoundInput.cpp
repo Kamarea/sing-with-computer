@@ -12,6 +12,7 @@ SoundInput::SoundInput()
     zeromem (samples, sizeof (samples));
     setOpaque (true);
 	samplesNumber=0;
+	isPaused = false;
 }
 
 SoundInput::~SoundInput()
@@ -30,6 +31,8 @@ void SoundInput::audioDeviceStopped()
 void SoundInput::audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
                                                        float** outputChannelData, int numOutputChannels, int numSamples)
 {
+	if(!isPaused)
+	{
     for(int i = 0; i < numSamples; ++i)//++i)
     {
         for (int chan = 0; chan < numInputChannels; ++chan)
@@ -53,6 +56,7 @@ void SoundInput::audioDeviceIOCallback (const float** inputChannelData, int numI
             --subSample;
         }
     }
+	}
 
 	lock.enter();
 	for(int i=0;i<numSamples / numInputChannels;i++)

@@ -106,13 +106,17 @@ public:
 
 	ScoreTable* scoreTable;
 	File directory;
+	int counter;
+	int count;
+	int tempoMs;
+	float firstSound;
 
+	CriticalSection lock;
     //==============================================================================
     juce_UseDebuggingNewOperator
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-	CriticalSection lock;
     //[/UserVariables]
 
     //==============================================================================
