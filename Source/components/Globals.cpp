@@ -74,6 +74,16 @@ void Globals::parseLine(String line)
 	{
 		showScore = pair.second.getIntValue();
 	}
+
+	if (pair.first == "shift")
+	{
+		shift = pair.second.getIntValue();
+	}
+
+	if (pair.first == "pitchTreshold")
+	{
+		pitchTreshold = pair.second.getFloatValue();
+	}
 }
 
 void Globals::parseSpectroNoise(String line)
@@ -153,6 +163,26 @@ bool Globals::getShowScore()
 	return showScore;
 }
 
+void Globals::setShift(int shift_in)
+{
+	shift = shift_in;
+	for (int i = 0; i < settings.size(); i++)
+	{
+		if (settings[i].first == "shift")
+			settings[i].second = String(shift);
+	}
+}
+
+int Globals::getShift()
+{
+	return shift;
+}
+
+float Globals::getPitchTreshold()
+{
+	return pitchTreshold;
+}
+
 void Globals::loadLanguagePack()
 {
 	std::vector<String> plTexts;
@@ -211,5 +241,32 @@ void Globals::loadLanguagePack()
 	languagePack[1].push_back(L"Yes");
 	languagePack[0].push_back(L"Nie");//24
 	languagePack[1].push_back(L"No");
-
+	languagePack[0].push_back(L"Synchronizacja");//25
+	languagePack[1].push_back(L"Synchronization");
+	languagePack[0].push_back(L"Kliknij aby sprzeprowadziæ synchronizacjê miêdzy mikrofonem a g³oœnikami");//26
+	languagePack[1].push_back(L"Click to calculate synchronization between microphone and speakers");
+	languagePack[0].push_back(L"Synchronizuj");//27
+	languagePack[1].push_back(L"Synchronize");
+	languagePack[0].push_back(L"Przesuniêcie miêdzy wejœciem a wyjœciem wynosi ");//28
+	languagePack[1].push_back(L"The shift between input and output is ");
+	languagePack[0].push_back(L" próbek.");//29
+	languagePack[1].push_back(L" samples.");
+	languagePack[0].push_back(L"Obliczanie...");//30
+	languagePack[1].push_back(L"Computing...");
+	languagePack[0].push_back(L" Nie uda³o siê poprawnie obliczyæ przesuniêcia. Spróbuj ponownie.");//31
+	languagePack[1].push_back(L" Synchronization failed. Try again.");
+	languagePack[0].push_back(L"Klasyfikacja");//32
+	languagePack[1].push_back(L"Classification");
+	languagePack[0].push_back(L"Intonacja");//33
+	languagePack[1].push_back(L"Pitch");
+	languagePack[0].push_back(L"Rytm");//34
+	languagePack[1].push_back(L"Rhythm");
+	languagePack[0].push_back(L"Barwa");//35
+	languagePack[1].push_back(L"Colour");
+	languagePack[0].push_back(L"dobra");//36
+	languagePack[1].push_back(L"good");
+	languagePack[0].push_back(L"z³a");//37
+	languagePack[1].push_back(L"bad");
+	languagePack[0].push_back(L"b. z³a");//38
+	languagePack[1].push_back(L"v. bad");
 }

@@ -121,7 +121,7 @@ public:
 		std::ostringstream sstream;
 		sstream << "data\\" << Globals::getInstance()->getUser() << "\\" << actualTime.getYear() << "-" << actualTime.getMonth()+1 << "-" <<
 			actualTime.getDayOfMonth() << "_" << actualTime.getHours() << "-" <<
-			actualTime.getMinutes();
+			actualTime.getMinutes() << "-" << actualTime.getSeconds();
 		std::string folderName = sstream.str();
 		File directory = File(File::getSpecialLocation(File::currentExecutableFile).
 			getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
@@ -179,7 +179,6 @@ public:
 AudioTabComponent::AudioTabComponent ()
     : tabbedComponent (0),
 	actualPitchPosition (0),
-    keyboardComponent (0),
 	sampleRate(0)
 {
 	tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop);
@@ -189,7 +188,6 @@ AudioTabComponent::AudioTabComponent ()
 AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
     : tabbedComponent (0),
 	actualPitchPosition (0),
-    keyboardComponent (0),
 	sampleRate(0)
 {
 	
@@ -199,7 +197,6 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 	addAndMakeVisible (scoreTable);
 	score = scoreParts;
 
-	keyboardComponent = new MidiKeyboardComponent (keyboardState, MidiKeyboardComponent::horizontalKeyboard);
 	if (Globals::getInstance()->getShowScore())
 	{
 		scoreImage = new ScoreImage(score);
@@ -214,6 +211,7 @@ AudioTabComponent::AudioTabComponent (Array<ScorePart> scoreParts)
 
 	m_pitchPage->hasScore = true;
 	m_pitchPage->setScoreTablePtr(scoreTable);
+	m_spectroPage->setScoreTablePtr(scoreTable);
 	// zamiana z dziedziny zmian na czas
 	// n / min -> kwantujê do 10/sek -> 600 / min -> 600 / n
 	int actualTempo;
@@ -330,18 +328,18 @@ AudioTabComponent::~AudioTabComponent()
 	//if(stopButton->isEnabled())
 	//	stopButton->triggerClick();
 	deviceManager.removeAudioCallback (m_soundInput);
-	deleteAndZero(sineComp);
+	deviceManager.removeAudioCallback (sineComp);
 
     deleteAndZero (tabbedComponent);
 	deleteAndZero (playButton);
 	deleteAndZero (stopButton);
 	deleteAndZero (m_soundInput);
-	if (Globals::getInstance()->getShowScore())
+	if (Globals::getInstance()->getShowScore() && hasScore)
 		deleteAndZero (scoreImage);
 	if (hasScore)
 		deleteAndZero (scoreTable);
-	
-    deleteAndZero (keyboardComponent);
+	if (hasScore)
+		deleteAndZero(sineComp);
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
@@ -423,10 +421,12 @@ void AudioTabComponent::afterMetronome()
 
 ScoreTable::ScoreTable()
 {
-	pitchDescription = new Label(String::empty, L"pitch");
-	rythmDescription = new Label(String::empty, L"rythm");
+	pitchDescription = new Label(String::empty, Globals::getInstance()->getTexts()[33]);
+	rhythmDescription = new Label(String::empty, Globals::getInstance()->getTexts()[34]);
+	colourDescription = new Label(String::empty, Globals::getInstance()->getTexts()[35]);
 	pitchValue = new Label(String::empty, L"0%");
-	rythmValue = new Label(String::empty, L"0%");
+	rhythmValue = new Label(String::empty, L"0%");
+	colourValue = new Label(String::empty, Globals::getInstance()->getTexts()[37]);
 
 	pitchDescription->setFont(Font (14.0000f, Font::plain));
     pitchDescription->setJustificationType (Justification::bottomLeft);
@@ -434,11 +434,17 @@ ScoreTable::ScoreTable()
     pitchDescription->setColour (TextEditor::textColourId, Colours::black);
     pitchDescription->setColour (TextEditor::backgroundColourId, Colour (0x0));
 
-	rythmDescription->setFont(Font (14.0000f, Font::plain));
-    rythmDescription->setJustificationType (Justification::bottomLeft);
-    rythmDescription->setEditable (false, false, false);
-    rythmDescription->setColour (TextEditor::textColourId, Colours::black);
-    rythmDescription->setColour (TextEditor::backgroundColourId, Colour (0x0));
+	rhythmDescription->setFont(Font (14.0000f, Font::plain));
+    rhythmDescription->setJustificationType (Justification::bottomLeft);
+    rhythmDescription->setEditable (false, false, false);
+    rhythmDescription->setColour (TextEditor::textColourId, Colours::black);
+    rhythmDescription->setColour (TextEditor::backgroundColourId, Colour (0x0));
+	
+	colourDescription->setFont(Font (14.0000f, Font::plain));
+    colourDescription->setJustificationType (Justification::bottomLeft);
+    colourDescription->setEditable (false, false, false);
+    colourDescription->setColour (TextEditor::textColourId, Colours::black);
+    colourDescription->setColour (TextEditor::backgroundColourId, Colour (0x0));
 
 	pitchValue->setFont(Font (14.0000f, Font::plain));
     pitchValue->setJustificationType (Justification::bottomLeft);
@@ -446,24 +452,34 @@ ScoreTable::ScoreTable()
     pitchValue->setColour (TextEditor::textColourId, Colours::black);
     pitchValue->setColour (TextEditor::backgroundColourId, Colour (0x0));
 
-	rythmValue->setFont(Font (14.0000f, Font::plain));
-    rythmValue->setJustificationType (Justification::bottomLeft);
-    rythmValue->setEditable (false, false, false);
-    rythmValue->setColour (TextEditor::textColourId, Colours::black);
-    rythmValue->setColour (TextEditor::backgroundColourId, Colour (0x0));
+	rhythmValue->setFont(Font (14.0000f, Font::plain));
+    rhythmValue->setJustificationType (Justification::bottomLeft);
+    rhythmValue->setEditable (false, false, false);
+    rhythmValue->setColour (TextEditor::textColourId, Colours::black);
+    rhythmValue->setColour (TextEditor::backgroundColourId, Colour (0x0));
+
+	colourValue->setFont(Font (14.0000f, Font::plain));
+    colourValue->setJustificationType (Justification::bottomLeft);
+    colourValue->setEditable (false, false, false);
+    colourValue->setColour (TextEditor::textColourId, Colours::black);
+    colourValue->setColour (TextEditor::backgroundColourId, Colour (0x0));
 
 	addAndMakeVisible(pitchDescription);
 	addAndMakeVisible(pitchValue);
-	addAndMakeVisible(rythmDescription);
-	addAndMakeVisible(rythmValue);
+	addAndMakeVisible(rhythmDescription);
+	addAndMakeVisible(rhythmValue);
+	addAndMakeVisible(colourDescription);
+	addAndMakeVisible(colourValue);
 }
 
 ScoreTable::~ScoreTable()
 {
 	deleteAndZero(pitchDescription);
-	deleteAndZero(rythmDescription);
+	deleteAndZero(rhythmDescription);
+	deleteAndZero(colourDescription);
 	deleteAndZero(pitchValue);
-	deleteAndZero(rythmValue);
+	deleteAndZero(rhythmValue);
+	deleteAndZero(colourValue);
 }
 
 void ScoreTable::paint(Graphics& g)
@@ -474,10 +490,12 @@ void ScoreTable::paint(Graphics& g)
 void ScoreTable::resized()
 {
 	pitchDescription->setBounds(getWidth() / 100,10,100,20);
-	rythmDescription->setBounds(getWidth() / 100,40,100,20);
+	rhythmDescription->setBounds(getWidth() / 100,40,100,20);
+	colourDescription->setBounds(getWidth() / 100,70,100,20);
 
 	pitchValue->setBounds(150,10,50,20);
-	rythmValue->setBounds(150,40,50,20);
+	rhythmValue->setBounds(150,40,50,20);
+	colourValue->setBounds(150,70,50,20);
 }
 
 void ScoreTable::updateScores()
@@ -497,14 +515,22 @@ void ScoreTable::updateScores()
 	tempString = "";
 	
 	//rythm
-	whole = (int)rythmPercentage;
-	rest = (int)((rythmPercentage - whole) * 100);
+	whole = (int)rhythmPercentage;
+	rest = (int)((rhythmPercentage - whole) * 100);
 	tempString += whole;
 	tempString += ",";
 	tempString += rest;
 	tempString += "%";
-	rythmValue->setText(tempString, sendNotification);
+	rhythmValue->setText(tempString, sendNotification);
 	tempString = "";
+
+	//colour
+	if (colourPercentage > 2.0)
+		colourValue->setText(Globals::getInstance()->getTexts()[38], sendNotification);
+	else if (colourPercentage > 1.0)
+		colourValue->setText(Globals::getInstance()->getTexts()[37], sendNotification);
+	else
+		colourValue->setText(Globals::getInstance()->getTexts()[36], sendNotification);
 
 	repaint();
 }

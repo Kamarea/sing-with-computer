@@ -152,6 +152,11 @@ void ScoreImage::paint (Graphics& g)
 	g.drawImage(scoreImage.rescaled(scoreWidth * scale,getHeight()),200 * scale,0,getWidth(),getHeight(),actualPosition,0,getWidth() - 200 * scale,getHeight());
 	g.setColour(Colours::darkgreen);
 	g.drawVerticalLine((200 + 10 + 3 * noteHeight) * scale, 0, getHeight());
+	g.setColour(Colours::black);
+	g.setFont(40);
+	g.drawFittedText(Globals::getInstance()->title,getWidth() / 2 - 100, 10, 200, 50, 36, 1);
+	g.setFont(20);
+	g.drawFittedText(Globals::getInstance()->composer,getWidth() - 220, 60, 200, 30, 34, 1);
 }
 
 void ScoreImage::playClicked()

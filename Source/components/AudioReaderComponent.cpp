@@ -8,8 +8,8 @@ AudioReaderComponentLive::AudioReaderComponentLive(AudioDeviceManager& deviceMan
 	  directoryList(0, thread)
 {
     formatManager.registerBasicFormats();
-	std::string folderName = "data";
-	File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()));
+	std::string folderName = "data\\";
+	File directory = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory().getParentDirectory().getChildFile (folderName.c_str()).getChildFile(Globals::getInstance()->getUser()));
 	
     addAndMakeVisible (fileTreeComp = new FileTreeComponent (directoryList));
 	directoryList.setDirectory (directory, true, true);
@@ -37,7 +37,6 @@ AudioReaderComponentLive::~AudioReaderComponentLive(void)
 
 void AudioReaderComponentLive::loadFileIntoTransport (const File& audioFile)
 {
-    // unload the previous file source and delete it..
     transportSource.stop();
     transportSource.setSource (nullptr);
     currentAudioFileSource = nullptr;
@@ -48,10 +47,9 @@ void AudioReaderComponentLive::loadFileIntoTransport (const File& audioFile)
     {
         currentAudioFileSource = new AudioFormatReaderSource (reader, true);
 
-        // ..and plug it into our transport source
         transportSource.setSource (currentAudioFileSource,
-                                   32768, // tells it to buffer this many samples ahead
-                                   &thread, // this is the background thread to use for reading-ahead
+                                   32768,
+                                   &thread,
                                    reader->sampleRate);
     }
 }
@@ -59,8 +57,6 @@ void AudioReaderComponentLive::loadFileIntoTransport (const File& audioFile)
 void AudioReaderComponentLive::showFile (const File& file)
 {
 
-    //zoomSlider->setValue (0, false, false);
-    //thumbnail->setFile (file);
     loadFileIntoTransport (file);
 	pitchFile = file.getParentDirectory().getChildFile("pitchSamples.smp");
 	spectroFile = file.getParentDirectory().getChildFile("spectroSamples.smp");
@@ -77,7 +73,7 @@ void AudioReaderComponentLive::showFile (const File& file)
 	transportSource.setPosition (0);
     transportSource.start();
 
-	startTimer (2560 * 1000 * 10 / setup.sampleRate); // use a timer to keep repainting displays
+	startTimer (2560 * 1000 / setup.sampleRate); // use a timer to keep repainting displays
 }
 
 void AudioReaderComponentLive::selectionChanged()
@@ -96,8 +92,6 @@ void AudioReaderComponentLive::fileDoubleClicked (const File&)
 void AudioReaderComponentLive::resized()
 {
 	this->setBounds(0,0,getWidth(),getHeight());
-	//pitchDisplay->setBounds (0,0, getWidth(), getHeight()/2);
-	//spectrogramDisplay->setBounds (0,getHeight()/2, getWidth(), getHeight());
 	if(reading)
 		fileTreeComp->setBounds (16, 8, getWidth() - 32, getHeight() - 8);
 	else
@@ -105,52 +99,40 @@ void AudioReaderComponentLive::resized()
 		pitchDisplay->setBounds (0,0, getWidth(), getHeight()/2);
 		spectrogramDisplay->setBounds (0,getHeight()/2, getWidth(), getHeight()/2);
 	}
-    //thumbnail->setBounds (16, getHeight() - 145, getWidth() - 32, 145);
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
 }
 
 void AudioReaderComponentLive::timerCallback()
 {
-	pitchDisplay->updatePosition(10);
-	spectrogramDisplay->updatePosition(10);
+	pitchDisplay->updatePosition(16);
+	spectrogramDisplay->updatePosition(16);
     repaint();
 }
 
-/*void AudioReaderComponentLive::audioDeviceAboutToStart (AudioIODevice*)
-{
-    zeromem (samples, sizeof (samples));
-}
-
-void AudioReaderComponentLive::audioDeviceStopped()
-{
-    zeromem (samples, sizeof (samples));
-}
-
-void AudioReaderComponentLive::audioDeviceIOCallback (const float** inputChannelData, int numInputChannels,
-                                                       float** outputChannelData, int numOutputChannels, int numSamples)
-{
-
-}
-*/
 SpectrogramDisplay::SpectrogramDisplay(File inFile, int samplerate)
 	: actualPosition(0),
 	localActualPosition(0),
 	sampleRate(samplerate)
 {
 	FileInputStream* stream = new FileInputStream(inFile);
-	float buffer[1024];
-	int bytesRead = 1024;
-	while(bytesRead == 1024)
+	float sample;
+	int count = 0;
+	std::vector<float> spectroSample;
+	spectroSample.clear();
+
+	while(!stream->isExhausted())
 	{
-		bytesRead = stream->read(buffer,1024);
-		std::vector<float> spectroSample;
-		spectroSample.resize(1024,0.0f);
-		for (int i=0;i<bytesRead;i++)
-			spectroSample[i] = buffer[i];
-		spectros.push_back(spectroSample);
+		sample = stream->readFloat();
+		spectroSample.push_back(sample);
+		count++;
+		if(count == 1024)
+		{
+			spectros.push_back(spectroSample);
+			spectroSample.clear();
+			count = 0;
+		}
 	}
-	
+
+	deleteAndZero(stream);
 	image = Image(Image::RGB,2048,1024,true);
 	image.clear(Rectangle<int>(2048,1024),Colours::blue);
 }
@@ -163,7 +145,7 @@ SpectrogramDisplay::~SpectrogramDisplay(void)
 void SpectrogramDisplay::updatePosition(int positionChange)
 {
 	lock.enter();
-	actualPosition += positionChange * 6;
+	actualPosition += positionChange;
 	lock.exit();
 }
 
@@ -183,17 +165,12 @@ void SpectrogramDisplay::paint (Graphics& g)
 	{
 
 
-		for (int j=0;j<1024;j++)
-//			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+(float)spectros[i][j]/100,1,1,1));		
-			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+(float)spectros[localActualPosition-(localShiftNumber-i)][j]/100,1,1,1));
+		for (int j=0;j<1024;j++)		
+			image.setPixelAt(2047-localShiftNumber+i, j, Colour::fromHSV(0.66+(float)spectros[localActualPosition-(localShiftNumber-i)][j],1,1,1));
 
 	}
-	//for(int i=0;i<1924;i++)
-	//	image.setPixelAt(2047,i,Colours::black);
-	g.drawImage(image,0,0,getWidth(),getHeight(),2048-getWidth(),0,getWidth(),getHeight()-5);
+	g.drawImage(image,0,0,getWidth(),getHeight(),2048-getWidth(),1024-getHeight(),getWidth(),getHeight());
 	
-//	g.drawFittedText(String(localActualPosition),getWidth()/2,100,100,100,Justification::left,1);
-//	g.drawFittedText(String(lastPosition),getWidth()/2,150,100,100,Justification::left,1);
 	g.drawFittedText(String(getHeight()),getWidth()/2,100,100,100,Justification::left,1);
 	g.drawFittedText(String(getWidth()),getWidth()/2,150,100,100,Justification::left,1);
 }
@@ -203,21 +180,21 @@ PitchDisplay::PitchDisplay(File inFile, int samplerate)
 	temp(0),
 	sampleRate(samplerate)
 {
-	pitches = new Array<float>();
+	pitches.clear();
 	FileInputStream* stream = new FileInputStream(inFile);
-	float buffer[256];
+	float sample;
 	int bytesRead = 256;
-	while(bytesRead == 256)
+	while(!stream->isExhausted())
 	{
-		bytesRead = stream->read(buffer,256);
-		for (int i=0;i<bytesRead;i++)
-			pitches->add(buffer[i]);
+		sample = stream->readFloat();
+		pitches.push_back(sample);
 	}
+	
+	deleteAndZero(stream);
 }
 
 PitchDisplay::~PitchDisplay(void)
 {
-	//deleteAndZero(pitches);
 }
 
 const String pitchNames[] = {"1A","1AIS","1B",
@@ -242,7 +219,7 @@ void PitchDisplay::paint (Graphics& g)
 		
 	float semitone = (float)getHeight()/pitchCount;
 	
-	if( actualPosition > pitches->size())
+	if( actualPosition > pitches.size())
 		return;
 	// draw background
 	g.setFont(semitone);
@@ -273,8 +250,8 @@ void PitchDisplay::paint (Graphics& g)
 		(actualPosition - getWidth() + 40) : actualPosition;
     for (int x = 0; x < drawNumber; ++x)
     {
-		float pitch = (*pitches)[actualPosition - drawNumber + x];
-        int y=(float)getHeight() - pitch * semitone;
+		float pitch = pitches[actualPosition - drawNumber + x];
+        int y=(float)getHeight() - (pitch - 33) * semitone;
         g.drawVerticalLine (getWidth() - 20 - drawNumber + x, y, y + 1);
     }
 }

@@ -1,13 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic outline for a simple desktop window.
-
-  ==============================================================================
-*/
-
 #include "component_headers.h"
 #include "MainWindow.h"
 #include "components\logs.h"
@@ -19,26 +9,14 @@ ChooseAndLoadFile* chooseAndLoadFile();
 Component* createAudioReader();
 Component* createAudio(Array<ScorePart> score);
 Component* createNoiseMeasurement();
+Component* createSynchronization();
+Component* createClassification();
 
-/*TextEditor* textField;
-
-
-void audioLog(const char* fmt,...){
-	va_list args;
-	va_start(args,fmt);
-	char text[256];
-	vsprintf(text,fmt,args);
-	textField->insertTextAtCaret(text);
-	va_end(args);
-}*/
-
-//==============================================================================
 class ContentComp  : public Component,
                      public MenuBarModel,
                      public ApplicationCommandTarget
 {
 public:
-    //==============================================================================
     ContentComp (MainAppWindow& mainWindow_)
         : mainWindow (mainWindow_),
           currentDemoId (0)
@@ -46,17 +24,11 @@ public:
         setOpaque (true);
 		userChoice = new UserChoice();
 		addAndMakeVisible(userChoice);
-		//userChoice->setBounds(0,0,500,200);
 		DialogWindow::showModalDialog(Globals::getInstance()->getTexts()[1], userChoice, this, Colours::white, false);
-        //invokeDirectly (showAudioReader, true);
     }
 
     ~ContentComp()
     {
-       //#if JUCE_OPENGL
-       // openGLContext.detach();
-       //#endif
-
 		deleteAndZero(userChoice);
     }
 
@@ -65,25 +37,14 @@ public:
         g.fillAll (Colours::white);
     }
 	
-    //==============================================================================
 	void showDemo (Component* comp)
     {
         currentComp = comp;
         addAndMakeVisible (currentComp);
-
-		/*textField = new TextEditor(L"logs");
-		currentComp->addAndMakeVisible(textField);
-		textField->setReadOnly(true);
-		textField->setCaretVisible(false);
-		textField->setMultiLine(true);
-		textField->setText(L"Logs:\r\n");
-		textField->moveCaretToEnd();
-		textField->setBounds(10,30,500,200);*/
 		
         currentComp->setBounds ("0, 0, parent.width, parent.height");
     }
 
-    //==============================================================================
     StringArray getMenuBarNames()
     {
         const char* const names[] = { 
@@ -111,7 +72,9 @@ public:
 		else if (menuIndex == 1)
 		{
 			menu.addCommandItem(commandManager, getNoise);
+			menu.addCommandItem(commandManager, synchronize);
             menu.addCommandItem (commandManager, showAudioReader);
+            menu.addCommandItem (commandManager, classify);
 		}
 
         return menu;
@@ -127,34 +90,26 @@ public:
         }
 	}
 
-	//==============================================================================
-    // The following methods implement the ApplicationCommandTarget interface, allowing
-    // this window to publish a set of actions it can perform, and which can be mapped
-    // onto menus, keypresses, etc.
-
 	ApplicationCommandTarget* getNextCommandTarget()
     {
-        // this will return the next parent component that is an ApplicationCommandTarget (in this
-        // case, there probably isn't one, but it's best to use this method in your own apps).
         return findFirstTargetParentComponent();
     }
 
 	 void getAllCommands (Array <CommandID>& commands)
     {
-        // this returns the set of all commands that this target can perform..
         const CommandID ids[] = { 
 			loadFile, 
 			showAudio,  
 			quit,
 			getNoise,
-			showAudioReader
+			synchronize,
+			showAudioReader,
+			classify
         };
 
         commands.addArray (ids, numElementsInArray (ids));
     }
 
-	 // This method is used when something needs to find out the details about one of the commands
-    // that this object can perform..
     void getCommandInfo (CommandID commandID, ApplicationCommandInfo& result)
     {
         const String generalCategory ("General");
@@ -180,12 +135,22 @@ public:
 		case quit:
 			result.setInfo(Globals::getInstance()->getTexts()[11], "Quit", demosCategory, 0);
             result.setTicked (currentDemoId == quit);
-            result.addDefaultKeypress ('Q', ModifierKeys::commandModifier);
+            result.addDefaultKeypress ('q', ModifierKeys::commandModifier);
 			break;
 		case getNoise:
-			result.setInfo(Globals::getInstance()->getTexts()[13], "Quit", demosCategory, 0);
+			result.setInfo(Globals::getInstance()->getTexts()[13], "Measures noise", demosCategory, 0);
             result.setTicked (currentDemoId == getNoise);
             result.addDefaultKeypress ('n', ModifierKeys::commandModifier);
+			break;
+		case synchronize:
+			result.setInfo(Globals::getInstance()->getTexts()[25], "Synchronize", demosCategory, 0);
+            result.setTicked (currentDemoId == getNoise);
+            result.addDefaultKeypress ('s', ModifierKeys::commandModifier);
+			break;
+		case classify:
+			result.setInfo(Globals::getInstance()->getTexts()[32], "Classify", demosCategory, 0);
+            result.setTicked (currentDemoId == getNoise);
+            result.addDefaultKeypress ('c', ModifierKeys::commandModifier);
 			break;
 
         default:
@@ -228,6 +193,16 @@ public:
         case quit:
 			mainWindow.userTriedToCloseWindow();
 			break;
+			
+        case synchronize:
+			showDemo(createSynchronization());
+		    currentDemoId = synchronize;
+			break;
+
+		case classify:
+			showDemo(createClassification());
+		    currentDemoId = classify;
+			break;
 
         default:
             return false;
@@ -237,7 +212,6 @@ public:
 	}
 
 private:
-    //==============================================================================
     MainAppWindow& mainWindow;
     OldSchoolLookAndFeel oldLookAndFeel;
     ScopedPointer<Component> currentComp;
@@ -245,7 +219,6 @@ private:
 	TextButton* testButton;
 	UserChoice* userChoice;
 
-	//==============================================================================
     StringArray getRenderingEngines()
     {
         StringArray renderingEngines (getPeer()->getAvailableRenderingEngines());
@@ -257,28 +230,26 @@ private:
         return renderingEngines;
     }
 
-	//==============================================================================
     enum CommandIDs
     {
 		showAudio					= 0x2005,
 		loadFile					= 0x2006,
 		showAudioReader				= 0x2007,
 		quit						= 0x2008,
-		getNoise					= 0x2009
+		getNoise					= 0x2009,
+		synchronize					= 0x2010,
+		classify					= 0x2011
     };
 
 
 };
 
-//==============================================================================
 MainAppWindow::MainAppWindow()
-    : DocumentWindow (Globals::getInstance()->getTexts()[0],//JUCEApplication::getInstance()->getApplicationName(),
+    : DocumentWindow (Globals::getInstance()->getTexts()[0],
                       Colours::azure,
                       DocumentWindow::allButtons,true)
 {
-    //centreWithSize (500, 400);
-    //setVisible (true);
-	setResizable (true, false); // resizability is a property of ResizableWindow
+	setResizable (true, false);
     setResizeLimits (400, 300, 8192, 8192);
 
 	ContentComp* contentComp = new ContentComp (*this);
@@ -286,25 +257,15 @@ MainAppWindow::MainAppWindow()
     commandManager.registerAllCommandsForTarget (contentComp);
     commandManager.registerAllCommandsForTarget (JUCEApplication::getInstance());
 
-    // this lets the command manager use keypresses that arrive in our window to send
-    // out commands
     addKeyListener (commandManager.getKeyMappings());
 
-    // sets the main content component for the window to be this tabbed
-    // panel. This will be deleted when the window is deleted.
     setContentOwned (contentComp, false);
 
-    // this tells the DocumentWindow to automatically create and manage a MenuBarComponent
-    // which uses our contentComp as its MenuBarModel
     setMenuBar (contentComp);
 
-    // tells our menu bar model that it should watch this command manager for
-    // changes, and send change messages accordingly.
     contentComp->setApplicationCommandManagerToWatch (&commandManager);
 
     setVisible (true);
-
-	//taskbarIcon = new DemoTaskbarComponent();
 }
 
 MainAppWindow::~MainAppWindow()

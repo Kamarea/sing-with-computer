@@ -1,39 +1,9 @@
-/*
-  ==============================================================================
-
-  This is an automatically generated file created by the Jucer!
-
-  Creation date:  27 Dec 2013 8:56:44pm
-
-  Be careful when adding custom code to these files, as only the code within
-  the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
-  and re-saved.
-
-  Jucer version: 1.12
-
-  ------------------------------------------------------------------------------
-
-  The Jucer is part of the JUCE library - "Jules' Utility Class Extensions"
-  Copyright 2004-6 by Raw Material Software ltd.
-
-  ==============================================================================
-*/
-
-//[Headers] You can add your own extra header files here...
 #include "ChooseAndLoadFile.h"
-//[/Headers]
 
-
-//[MiscUserDefs] You can add your own user definitions and misc code here...
-
-//[/MiscUserDefs]
 ChooseAndLoadFile* ChooseAndLoadFile::instance;
-//==============================================================================
+
 ChooseAndLoadFile::ChooseAndLoadFile ()
 {
-
-    //[UserPreSize]
-    //[/UserPreSize]
 	setComponentID("chooseAndLoadFileID");
     setSize (1, 1);
     setOpaque (true);
@@ -91,16 +61,10 @@ ChooseAndLoadFile::ChooseAndLoadFile ()
 	measureNumber->setFont(Font(50));
 	measureNumber->setBounds(550, 240, 300, 50);
 	repaint();
-
-    //[Constructor] You can add your own custom stuff here..
-    //[/Constructor]
 }
 
 ChooseAndLoadFile::~ChooseAndLoadFile()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-
 	deleteAndZero(desc1);
 	deleteAndZero(desc2);
 	deleteAndZero(desc3);
@@ -110,39 +74,15 @@ ChooseAndLoadFile::~ChooseAndLoadFile()
 	deleteAndZero(composer);
 	deleteAndZero(measureNumber);
 	deleteAndZero(fileChooser);
-
-    //[Destructor]. You can add your own custom destruction code here..
-    //[/Destructor]
 }
-
-//==============================================================================
 
 void ChooseAndLoadFile::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
     g.fillAll (Colours::white);
-
-    //[UserPaint] Add your own custom painting code here..
-    //[/UserPaint]
 }
 
 void ChooseAndLoadFile::resized()
 {
-    //[UserResized] Add your own custom resize handling here..
-	
-/*	desc1->setFont(Font(50));
-	desc1->setBounds(0,30,200,50);
-	desc2->setFont(Font(50));
-	desc2->setBounds(0,100,200,50);
-	desc3->setFont(Font(50));
-	desc3->setBounds(0,170,200,50);
-	desc4->setFont(Font(50));
-	desc4->setBounds(0,240,200,50);
-	fileChosen->setFont(Font(50));
-	fileChosen->setBounds(250, 30, 300, 50);*/
-    //[/UserResized]
 }
 
 void ChooseAndLoadFile::readScore(int position)
@@ -593,7 +533,6 @@ void ChooseAndLoadFile::parseNote(String noteString)
 }
 
 
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 Component* chooseAndLoadFileComponent()
 {
 	return ChooseAndLoadFile::getInstance();
@@ -602,21 +541,3 @@ ChooseAndLoadFile* chooseAndLoadFile()
 {
 	return ChooseAndLoadFile::getInstance();
 }
-
-//[/MiscUserCode]
-
-
-//==============================================================================
-#if 0
-/*  -- Jucer information section --
-
-    This is where the Jucer puts all of its metadata, so don't change anything in here!
-
-BEGIN_JUCER_METADATA
-
-END_JUCER_METADATA
-*/
-#endif
-
-// Static member declarations and resources would go here... (these aren't shown in the code preview)
-

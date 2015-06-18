@@ -80,6 +80,7 @@ private:
 	int recordedScoreNumber;
 	ScoreTable* scoreTable;
 	std::vector<std::pair<int,int>> measuresInSamples;
+	float pitchTreshold;
 	
 	float restsPercentage;
 	float pitchPercentage;

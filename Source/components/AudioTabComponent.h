@@ -46,13 +46,16 @@ public:
 	void updateScores();
 
 	float pitchPercentage;
-	float rythmPercentage;
+	float rhythmPercentage;
+	float colourPercentage;
 
 private:
 	Label* pitchDescription;
 	Label* pitchValue;
-	Label* rythmDescription;
-	Label* rythmValue;
+	Label* rhythmDescription;
+	Label* rhythmValue;
+	Label* colourDescription;
+	Label* colourValue;
 
 };
 
@@ -97,8 +100,6 @@ public:
 	bool hasScore;
 	std::vector<std::pair<int,int>> measuresInSamples;
 	int sampleRate;
-    MidiKeyboardState keyboardState;
-	MidiKeyboardComponent* keyboardComponent;
 	SineWaveComponent* sineComp;
 	
 	ImageButton* playButton;

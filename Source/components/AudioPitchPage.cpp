@@ -18,6 +18,7 @@ AudioPitchPage::AudioPitchPage()
 	samplesNumber=0;
 	isRecording = false;
 	hasScore = false;
+	pitchTreshold = Globals::getInstance()->getPitchTreshold();
 
     startTimer (1000 / 50); // use a timer to keep repainting this component
 }
@@ -122,7 +123,7 @@ void AudioPitchPage::updateSamples(int number, std::vector<float>* samples)
 				for (int i = 0; i < 1024; i++)
 					tempSamples[i] = allSamples[numberOfSamplesRecalculated - 512 + i];
 				tempPitch = computePitch(tempSamples) / 1.32f;
-				pitch=std::max<float>(0.0,69+12*(log10(tempPitch/440)/log_10_2));
+				pitch=std::max<float>(0.0, 69 + 12 * (log10(tempPitch / 440) / log_10_2));
 
 				lock.enter();
 				tempSize = pitches.size();
@@ -146,7 +147,7 @@ void AudioPitchPage::updateSamples(int number, std::vector<float>* samples)
 float AudioPitchPage::computePitch(float *my_samples){
 	float freq=0.0f;				// freq to return
 	int lev=6;						// levels of analysis
-	float globalMaxTreshold=0.4f;	// threshold of maximum values to consider
+	float globalMaxTreshold=pitchTreshold;	// threshold of maximum values to consider
 	int maxFreq = 3000;				// minimum distance to consider valid
 	int diffLevs = 3;				// number of diferences to go through
 	int fs=44100;					// sample rate
@@ -407,7 +408,8 @@ void AudioPitchPage::stopClicked()
 
 
 	isRecording = false;
-	bool res = fileOut->write(writeSamples.data(),writeSamples.size());
+	for (int i = 0; i < writeSamples.size(); i++)
+		fileOut->writeFloat(writeSamples[i]);
 	delete fileOut;
 	lock.exit();
 
@@ -508,7 +510,7 @@ void AudioPitchPage::calculateDistances()
 	pitchPercentage = 100 * (1 - pitchWrongPercentage);
 
 	scoreTable->pitchPercentage = pitchPercentage;
-	scoreTable->rythmPercentage = restsPercentage;
+	scoreTable->rhythmPercentage = restsPercentage;
 	scoreTable->updateScores();
 }
 
@@ -523,7 +525,7 @@ void AudioPitchPage::calculateWrongest()
 		if (pitchErrorsTable[i] > 0)
 			errors[i] = 1;
 	}
-	// rythm
+	// rhythm
 	for (int i = 0; i < errors.size(); i++)
 	{
 		if (rythmErrorsTable[i] > 0)

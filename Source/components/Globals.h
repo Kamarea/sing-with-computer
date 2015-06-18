@@ -43,6 +43,9 @@ public:
 	void setSpectroNoise(std::vector<float>);
 	std::vector<String> getTexts();
 	bool getShowScore();
+	void setShift(int);
+	int getShift();
+	float getPitchTreshold();
 
 	String title;
 	String composer;
@@ -54,7 +57,8 @@ private:
 	std::vector<float> spectroNoise;
 	enum lang currentLang;
 	bool showScore;
-
+	int shift;
+	float pitchTreshold;
 
 	std::vector<std::vector<String>> languagePack;
 

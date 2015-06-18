@@ -1,6 +1,7 @@
 #include "AudioSpectrogramPage.h"
 #include "fft.h"
 #include <algorithm>
+#include "AudioTabComponent.h"
 
 #include "logs.h"
 
@@ -17,6 +18,7 @@ AudioSpectrogramPage::AudioSpectrogramPage()
 	image = Image(Image::RGB,2048,1024,true);
 	image.clear(Rectangle<int>(2048,1024),Colours::blue);
 	isRecording = false;
+	hasScore = false;
 
 	spectroNoise = Globals::getInstance()->getSpectroNoise();
 
@@ -71,6 +73,7 @@ void AudioSpectrogramPage::paint (Graphics& g)
 	lock.enter();
 	shiftNumber = shiftNumber - localShiftNumber;
 	lock.exit();
+
 }
 
 void AudioSpectrogramPage::timerCallback()
@@ -126,6 +129,18 @@ void AudioSpectrogramPage::updateSamples(int number, std::vector<float>* samples
 					spectroLine[i] = std::max<float>(0.0, spectroLine[i] - spectroNoise[i]);
 
 				//calculatePitch(spectroLine);
+
+				// timbre - aspiration calculation
+				float max = 0;
+				float mean = 0;
+				for (int i = 0; i < 1024; i++)
+				{
+					if (spectroLine[i] > max)
+						max = spectroLine[i];
+					mean += spectroLine[i];
+				}
+				float aspir = mean / 10 / max;
+				aspirationTable.push_back(aspir);
 
 				lock.enter();
 				allSpectroSamples.push_back(spectroLine);
@@ -208,6 +223,12 @@ void AudioSpectrogramPage::playClicked(File directory)
 	lock.exit();
 }
 
+void AudioSpectrogramPage::setScoreTablePtr(ScoreTable* score)
+{
+	scoreTable = score;
+	hasScore = true;
+}
+
 void AudioSpectrogramPage::stopClicked()
 {
 	lock.enter();
@@ -216,9 +237,22 @@ void AudioSpectrogramPage::stopClicked()
 	
 	for (int i=begin;i<end;i++)
 	{
-		fileOutput->write(allSpectroSamples[i].data(),2048);
+		for (int j = 0; j < 1024; j++)
+			fileOutput->writeFloat(allSpectroSamples[i][j]);
 	}
 	isRecording = false;
 	lock.exit();
 	delete fileOutput;
+
+	if (hasScore)
+	{
+		float meanAspir = 0;
+
+		for (int i = begin; i < end; i++)
+		{
+			meanAspir += aspirationTable[i];
+		}
+		meanAspir /= end - begin;
+		scoreTable->colourPercentage = meanAspir;
+	}
 }

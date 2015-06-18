@@ -33,7 +33,7 @@ public:
     void paint (Graphics& g);
 
 private:
-	Array<float>* pitches;
+	std::vector<float> pitches;
 	int actualPosition;
 	int temp;
 	int sampleRate;
